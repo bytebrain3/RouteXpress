@@ -1,0 +1,57 @@
+{
+  "name": "routexpress",
+  "version": "1.0.0",
+  "description": "A TypeScript/JavaScript library for integrating Steadfast and Pathao delivery services",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "node --loader ts-node/esm test/main.ts",
+    "start": "ts-node test/main.ts"
+  },
+  "keywords": [
+    "delivery",
+    "steadfast",
+    "pathao",
+    "logistics",
+    "bangladesh"
+  ],
+  "author": "Dip",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bytebrain3/RouteXpress.git"
+  },
+  "packageManager": "pnpm@10.7.1",
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "axios": "^1.9.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.0.0"
+  },
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "dist",
+    "module": "commonjs",
+    "target": "es2019",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*"
+  ]
+}
