@@ -16,6 +16,7 @@ class Steadfast {
     this.baseUrl = "https://portal.steadfast.com.bd/api/v1";
   }
 
+  
   private validator(
     orderData: Order_Data_For_Steadfast
   ): { status: number; errors: string } | null {
@@ -100,7 +101,7 @@ class Steadfast {
 
   async createBulkOrder(bulkOrder: Bulk_Order_For_Steadfast) {
     try {
-      if (!bulkOrder || !bulkOrder.provider) {
+      if (!bulkOrder || !bulkOrder.orders) {
         throw new Error("Bulk order data with orders array is required.");
       }
       const { orders } = bulkOrder;
@@ -118,7 +119,6 @@ class Steadfast {
       // Validate each order in the bulk request
       for (const order of orders) {
         const validationResult = this.validator({
-          provider: bulkOrder.provider,
           order_details: {
             invoice: order.invoice,
             recipient_name: order.recipient_name,

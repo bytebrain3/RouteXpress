@@ -36,7 +36,6 @@ interface Bulk_Order_Item_For_Steadfast {
 }
 
 interface Bulk_Order_For_Steadfast {
-  provider: string;
   orders: Bulk_Order_Item_For_Steadfast[];
 }
 
