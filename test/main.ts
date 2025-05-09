@@ -2,14 +2,14 @@ import RouteXpress from "../src/index";
 
 const client = new RouteXpress({
   steadfast: {
-    apiKey: "xlpuoemeb5mw2ymmklkehqlppclp1gmu",
-    apiSecret: "h6u3emofj23wpa6ywroufwae",
+    apiKey: "",
+    apiSecret: "",
   },
   pathao: {
-    apiKey: "y5eVvjXeEP",
-    apiSecret: "hboGsggPNVp6cJOQxzQ9q8oAY8eHCMeJKcUddWWv",
-    username: "mdip855@gmail.com",
-    password: "Dip3@nai",
+    apiKey: "",
+    apiSecret: "",
+    username: "",
+    password: "",
   },
 });
 
