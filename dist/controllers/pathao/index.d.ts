@@ -1,5 +1,5 @@
-import { TookenIssueResponse, ErrorResponse, PathaoStore, PathaoStoreResponse, CreatePathaoOrder, Bulk_Order_For_Pathao_Response, Bulk_Order_For_Pathao, PathaoCityResponse, PathaoZoneResponse, PathaoPriceResponse, PathaoAreaResponse, PathaoOrderPiceData, PathaoAllStoreResponse } from "../../types/pathao";
-import { Pathao_Config } from "../../types/config";
+import { TookenIssueResponse, ErrorResponse, PathaoStore, PathaoStoreResponse, CreatePathaoOrder, Bulk_Order_For_Pathao_Response, Bulk_Order_For_Pathao, PathaoCityResponse, PathaoZoneResponse, PathaoPriceResponse, PathaoAreaResponse, PathaoOrderPiceData, PathaoAllStoreResponse } from "../../types/pathao.js";
+import { Pathao_Config } from "../../types/config.js";
 declare class Pathao {
     private config;
     private baseUrl;
@@ -19,4 +19,4 @@ declare class Pathao {
     price_plane(authToken: string, orderData: PathaoOrderPiceData): Promise<PathaoPriceResponse | ErrorResponse>;
     getAllStore(authToken: string): Promise<PathaoAllStoreResponse | ErrorResponse>;
 }
-export default Pathao;
+export { Pathao };

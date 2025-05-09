@@ -12,10 +12,9 @@ import {
   PathaoAreaResponse,
   PathaoOrderPiceData,
   PathaoAllStoreResponse
-} from "../../types/pathao";
-import axios from "node_modules/axios";
+} from "../../types/pathao.js"; // updated with .js
 
-import { Pathao_Config } from "../../types/config"; // import type of config
+import { Pathao_Config } from "../../types/config.js"; // updated with .js
 
 class Pathao {
   private config: Pathao_Config;
@@ -28,34 +27,32 @@ class Pathao {
 
   async createNewToken(): Promise<TookenIssueResponse | ErrorResponse> {
     try {
-      const response = await axios.post(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/issue-token`,
         {
-          client_id: this.config.apiKey ?? "",
-          client_secret: this.config.apiSecret ?? "",
-          grant_type: "password",
-          username: this.config.username ?? "",
-          password: this.config.password ?? "",
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_id: this.config.apiKey ?? "",
+            client_secret: this.config.apiSecret ?? "",
+            grant_type: "password",
+            username: this.config.username ?? "",
+            password: this.config.password ?? "",
+          }),
         }
       );
-      return response.data as TookenIssueResponse;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
+          status: response.status,
+          message: data?.message ?? response.statusText,
         } as ErrorResponse;
       }
+      return data as TookenIssueResponse;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
       } as ErrorResponse;
     }
   }
@@ -64,33 +61,31 @@ class Pathao {
     refreshToken: string
   ): Promise<TookenIssueResponse | ErrorResponse> {
     try {
-      const response = await axios.post(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/issue-token`,
         {
-          client_id: this.config.apiKey,
-          client_secret: this.config.apiSecret,
-          grant_type: "refresh_token",
-          refresh_token: refreshToken,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_id: this.config.apiKey,
+            client_secret: this.config.apiSecret,
+            grant_type: "refresh_token",
+            refresh_token: refreshToken,
+          }),
         }
       );
-      return response.data as TookenIssueResponse;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
+          status: response.status,
+          message: data?.message ?? response.statusText,
         } as ErrorResponse;
       }
+      return data as TookenIssueResponse;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
       } as ErrorResponse;
     }
   }
@@ -171,34 +166,31 @@ class Pathao {
             "Contact number and secondary contact number cannot be the same",
         } as ErrorResponse;
       }
-      console.log("Store data:", store);
-      console.log("Auth token:", authToken);
-      const jsonData = JSON.stringify(store);
-      const response = await axios.post(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/stores`,
-        store,
         {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
+          body: JSON.stringify(store),
         }
       );
-      return response.data as PathaoStoreResponse;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: error.response?.data?.errors,
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: data?.errors,
         } as ErrorResponse;
       }
+      return data as PathaoStoreResponse;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
@@ -302,31 +294,31 @@ class Pathao {
         } as ErrorResponse;
       }
       const removeAuthTokrn = { ...order, authToken: undefined };
-      const response = await axios.post(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/orders`,
-        removeAuthTokrn,
         {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
+          body: JSON.stringify(removeAuthTokrn),
         }
       );
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: error.response?.data?.errors,
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: data?.errors,
         } as ErrorResponse;
       }
+      return data;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
@@ -469,37 +461,31 @@ class Pathao {
       }
 
       // Send the request with proper format
-      const response = await axios.post(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/orders/bulk`,
-        { orders: pathaoOrder.orders }, // Wrap orders array in an object with 'orders' key
         {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${pathaoOrder.authToken}`,
           },
+          body: JSON.stringify({ orders: pathaoOrder.orders }), // Wrap orders array in an object with 'orders' key
         }
       );
-
-      return response.data as Bulk_Order_For_Pathao_Response[];
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: JSON.stringify(error.response?.data?.errors),
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: JSON.stringify(data?.errors),
         } as ErrorResponse;
       }
+      return data as Bulk_Order_For_Pathao_Response[];
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
@@ -518,36 +504,30 @@ class Pathao {
         throw new Error("CID is required to get order status");
       }
 
-      const response = await axios.get(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/orders/${cidDetails.cid}/info`,
         {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${cidDetails.authToken}`,
           },
         }
       );
-
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: JSON.stringify(error.response?.data?.errors),
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: JSON.stringify(data?.errors),
         } as ErrorResponse;
       }
+      return data;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
@@ -558,40 +538,35 @@ class Pathao {
     authToken: string
   ): Promise<PathaoCityResponse | ErrorResponse> {
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/city-list`,
         {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
         }
       );
-      return {
-        message: response.data.message,
-        type: response.data.type,
-        code: response.data.code,
-        data: response.data.data.data, // Access the nested 'data' array
-      } as PathaoCityResponse;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: JSON.stringify(error.response?.data?.errors),
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: JSON.stringify(data?.errors),
         } as ErrorResponse;
       }
       return {
+        message: data.message,
+        type: data.type,
+        code: data.code,
+        data: data.data.data,
+      } as PathaoCityResponse;
+    } catch (error: any) {
+      return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
@@ -603,84 +578,75 @@ class Pathao {
     cityId: number
   ): Promise<PathaoZoneResponse | ErrorResponse> {
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/cities/${cityId}/zone-list`,
         {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
         }
       );
-      return {
-        message: response.data.message,
-        type: response.data.type,
-        code: response.data.code,
-        data: response.data.data.data,
-      } as PathaoZoneResponse;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: JSON.stringify(error.response?.data?.errors),
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: JSON.stringify(data?.errors),
         } as ErrorResponse;
       }
       return {
+        message: data.message,
+        type: data.type,
+        code: data.code,
+        data: data.data.data,
+      } as PathaoZoneResponse;
+    } catch (error: any) {
+      return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
     }
   }
+
   async get_area_list(
     authToken: string,
     zoneId: number
   ): Promise<PathaoAreaResponse | ErrorResponse> {
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/zones/${zoneId}/area-list`,
         {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
         }
       );
-      return {
-        message: response.data.message,
-        type: response.data.type,
-        code: response.data.code,
-        data: response.data.data.data,
-      } as PathaoAreaResponse;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: JSON.stringify(error.response?.data?.errors),
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: JSON.stringify(data?.errors),
         } as ErrorResponse;
       }
       return {
+        message: data.message,
+        type: data.type,
+        code: data.code,
+        data: data.data.data,
+      } as PathaoAreaResponse;
+    } catch (error: any) {
+      return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
@@ -692,36 +658,31 @@ class Pathao {
     orderData: PathaoOrderPiceData
   ): Promise<PathaoPriceResponse | ErrorResponse> {
     try {
-      const response = await axios.post(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/merchant/price-plan`,
-        orderData,
         {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
+          body: JSON.stringify(orderData),
         }
       );
-      return response.data as PathaoPriceResponse;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: JSON.stringify(error.response?.data?.errors),
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: JSON.stringify(data?.errors),
         } as ErrorResponse;
       }
+      return data as PathaoPriceResponse;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
@@ -732,53 +693,47 @@ class Pathao {
     authToken: string
   ): Promise<PathaoAllStoreResponse | ErrorResponse> {
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/stores`,
         {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
         }
       );
-      return {
-        message: response.data.message,
-        type: response.data.type,
-        code: response.data.code,
-        data: response.data.data.data,
-        pagination: {
-          total: response.data.data.total,
-          current_page: response.data.data.current_page,
-          per_page: response.data.data.per_page,
-          total_in_page: response.data.data.total_in_page,
-          last_page: response.data.data.last_page,
-          path: response.data.data.path,
-          to: response.data.data.to,
-          from: response.data.data.from,
-          last_page_url: response.data.data.last_page_url,
-          first_page_url: response.data.data.first_page_url,
-        },
-      } as PathaoAllStoreResponse;
-      
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status ?? 500,
-          message:
-            (error.response?.data as { message?: string })?.message ??
-            error.message,
-          code: error.response?.data?.code,
-          error: JSON.stringify(error.response?.data?.errors),
+          status: response.status,
+          message: data?.message ?? response.statusText,
+          code: data?.code,
+          error: JSON.stringify(data?.errors),
         } as ErrorResponse;
       }
       return {
+        message: data.message,
+        type: data.type,
+        code: data.code,
+        data: data.data.data,
+        pagination: {
+          total: data.data.total,
+          current_page: data.data.current_page,
+          per_page: data.data.per_page,
+          total_in_page: data.data.total_in_page,
+          last_page: data.data.last_page,
+          path: data.data.path,
+          to: data.data.to,
+          from: data.data.from,
+          last_page_url: data.data.last_page_url,
+          first_page_url: data.data.first_page_url,
+        },
+      } as PathaoAllStoreResponse;
+    } catch (error: any) {
+      return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
         code: undefined,
         error: undefined,
       } as ErrorResponse;
@@ -786,4 +741,4 @@ class Pathao {
   }
 }
 
-export default Pathao;
+export {Pathao};

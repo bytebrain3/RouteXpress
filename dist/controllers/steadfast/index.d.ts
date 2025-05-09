@@ -1,5 +1,5 @@
-import { Order_Data_For_Steadfast, Bulk_Order_For_Steadfast, Bulk_Order_Response_For_Steadfast, ErrorResponse, Create_Order_Response_Items_For_Steadfast } from "../../types/steadfast";
-import { Steadfast_Config } from "../../types/config";
+import { Order_Data_For_Steadfast, Bulk_Order_For_Steadfast, Bulk_Order_Response_For_Steadfast, ErrorResponse, Create_Order_Response_Items_For_Steadfast } from "../../types/steadfast.js";
+import { Steadfast_Config } from "../../types/config.js";
 declare class Steadfast {
     private config;
     private baseUrl;
@@ -12,4 +12,4 @@ declare class Steadfast {
     statusBytrackingcode(trackingcode: string): Promise<any>;
     getBalance(): Promise<any>;
 }
-export default Steadfast;
+export { Steadfast };

@@ -1,19 +1,17 @@
 import {
   Order_Data_For_Steadfast,
   Bulk_Order_For_Steadfast,
-} from "./types/steadfast"; // import type of steadfast
+} from "./types/steadfast.js"; // import type of steadfast
 import {
   PathaoStore,
   CreatePathaoOrder,
-  Bulk_Order_For_Pathao_Response,
-  
   Bulk_Order_For_Pathao,
-} from "./types/pathao"; // import type of pathao
+} from "./types/pathao.js"; // import type of pathao
 
-import { Config } from "./types/config"; // import type of config
+import { Config } from "./types/config.js"; // import type of config
 
-import Steadfast from "./controllers/steadfast";
-import Pathao from "./controllers/pathao";
+import { Steadfast } from "./controllers/steadfast/index.js"; // updated
+import { Pathao } from "./controllers/pathao/index.js"; // updated
 
 class RouteXpress {
   private config: Config;
@@ -103,7 +101,7 @@ class RouteXpress {
         throw new Error("Bulk order and provider are required");
       }
       const normalizedProvider = provider.toLowerCase();
-      
+
       if (normalizedProvider === "steadfast") {
         const steadfastOrder = allOrder as Bulk_Order_For_Steadfast;
         if (!steadfastOrder?.orders) {
@@ -111,17 +109,18 @@ class RouteXpress {
         }
         return await this.getSteadfast().createBulkOrder(steadfastOrder);
       }
-      
+
       if (normalizedProvider === "pathao") {
         const pathaoOrder = allOrder as Bulk_Order_For_Pathao;
         if (!pathaoOrder?.orders || !pathaoOrder.authToken) {
-          throw new Error("Orders and auth token are required for Pathao bulk orders");
+          throw new Error(
+            "Orders and auth token are required for Pathao bulk orders"
+          );
         }
-        
 
         return await this.getPathao().createBulkOrder(pathaoOrder);
       }
-      
+
       throw new Error(`Unsupported provider: ${provider}`);
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -133,7 +132,7 @@ class RouteXpress {
 
   async getOrderStatus(orderData: {
     provider: string;
-    data: { consignment_id : string , authToken?: string };
+    data: { consignment_id: string; authToken?: string };
   }) {
     try {
       if (!orderData || !orderData.provider) {
@@ -149,7 +148,7 @@ class RouteXpress {
           );
           return result;
         case "pathao":
-          if(!orderData.data.authToken) {
+          if (!orderData.data.authToken) {
             throw new Error("Auth token is required for Pathao orders");
           }
           const auth_token = orderData.data.authToken;
@@ -244,7 +243,6 @@ class RouteXpress {
     }
   }
 
-
   async getPathaoCity(authToken: string) {
     try {
       return await this.getPathao().getCitys(authToken);
@@ -278,7 +276,6 @@ class RouteXpress {
     }
   }
 
-
   async price_plane(authToken: string, orderData: any) {
     try {
       return await this.getPathao().price_plane(authToken, orderData);
@@ -303,3 +300,4 @@ class RouteXpress {
 }
 
 export default RouteXpress;
+export { RouteXpress };

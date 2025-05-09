@@ -1,10 +1,5 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const steadfast_1 = __importDefault(require("./controllers/steadfast"));
-const pathao_1 = __importDefault(require("./controllers/pathao"));
+import { Steadfast } from "./controllers/steadfast/index.js"; // updated
+import { Pathao } from "./controllers/pathao/index.js"; // updated
 class RouteXpress {
     constructor(config) {
         if (!config) {
@@ -13,10 +8,10 @@ class RouteXpress {
         this.config = config;
         // Initialize services only if their configs are provided
         if (config.steadfast) {
-            this.steadfast = new steadfast_1.default(config.steadfast);
+            this.steadfast = new Steadfast(config.steadfast);
         }
         if (config.pathao) {
-            this.pathao = new pathao_1.default(config.pathao);
+            this.pathao = new Pathao(config.pathao);
         }
         // Ensure at least one service is configured
         if (!this.steadfast && !this.pathao) {
@@ -41,7 +36,7 @@ class RouteXpress {
             const normalizedProvider = provider.toLowerCase();
             if (normalizedProvider === "steadfast") {
                 const steadfastOrder = orderData;
-                if (!(steadfastOrder === null || steadfastOrder === void 0 ? void 0 : steadfastOrder.order_details)) {
+                if (!steadfastOrder?.order_details) {
                     throw new Error("Order details are required for Steadfast orders");
                 }
                 return await this.getSteadfast().createOrder(steadfastOrder);
@@ -70,14 +65,14 @@ class RouteXpress {
             const normalizedProvider = provider.toLowerCase();
             if (normalizedProvider === "steadfast") {
                 const steadfastOrder = allOrder;
-                if (!(steadfastOrder === null || steadfastOrder === void 0 ? void 0 : steadfastOrder.orders)) {
+                if (!steadfastOrder?.orders) {
                     throw new Error("Orders are required for Steadfast bulk orders");
                 }
                 return await this.getSteadfast().createBulkOrder(steadfastOrder);
             }
             if (normalizedProvider === "pathao") {
                 const pathaoOrder = allOrder;
-                if (!(pathaoOrder === null || pathaoOrder === void 0 ? void 0 : pathaoOrder.orders) || !pathaoOrder.authToken) {
+                if (!pathaoOrder?.orders || !pathaoOrder.authToken) {
                     throw new Error("Orders and auth token are required for Pathao bulk orders");
                 }
                 return await this.getPathao().createBulkOrder(pathaoOrder);
@@ -253,4 +248,5 @@ class RouteXpress {
         }
     }
 }
-exports.default = RouteXpress;
+export default RouteXpress;
+export { RouteXpress };

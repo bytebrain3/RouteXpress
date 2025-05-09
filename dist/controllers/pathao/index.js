@@ -1,73 +1,66 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("node_modules/axios"));
 class Pathao {
     constructor(config) {
         this.config = config;
         this.baseUrl = "https://api-hermes.pathao.com";
     }
     async createNewToken() {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         try {
-            const response = await axios_1.default.post(`${this.baseUrl}/aladdin/api/v1/issue-token`, {
-                client_id: (_a = this.config.apiKey) !== null && _a !== void 0 ? _a : "",
-                client_secret: (_b = this.config.apiSecret) !== null && _b !== void 0 ? _b : "",
-                grant_type: "password",
-                username: (_c = this.config.username) !== null && _c !== void 0 ? _c : "",
-                password: (_d = this.config.password) !== null && _d !== void 0 ? _d : "",
-            }, {
-                headers: {
-                    "Content-Type": "application/json",
-                },
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/issue-token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    client_id: this.config.apiKey ?? "",
+                    client_secret: this.config.apiSecret ?? "",
+                    grant_type: "password",
+                    username: this.config.username ?? "",
+                    password: this.config.password ?? "",
+                }),
             });
-            return response.data;
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_f = (_e = error.response) === null || _e === void 0 ? void 0 : _e.status) !== null && _f !== void 0 ? _f : 500,
-                    message: (_j = (_h = (_g = error.response) === null || _g === void 0 ? void 0 : _g.data) === null || _h === void 0 ? void 0 : _h.message) !== null && _j !== void 0 ? _j : error.message,
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
                 };
             }
+            return data;
+        }
+        catch (error) {
             return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
             };
         }
     }
     async createRefresshToken(refreshToken) {
-        var _a, _b, _c, _d, _e;
         try {
-            const response = await axios_1.default.post(`${this.baseUrl}/aladdin/api/v1/issue-token`, {
-                client_id: this.config.apiKey,
-                client_secret: this.config.apiSecret,
-                grant_type: "refresh_token",
-                refresh_token: refreshToken,
-            }, {
-                headers: {
-                    "Content-Type": "application/json",
-                },
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/issue-token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    client_id: this.config.apiKey,
+                    client_secret: this.config.apiSecret,
+                    grant_type: "refresh_token",
+                    refresh_token: refreshToken,
+                }),
             });
-            return response.data;
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.status) !== null && _b !== void 0 ? _b : 500,
-                    message: (_e = (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.message) !== null && _e !== void 0 ? _e : error.message,
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
                 };
             }
+            return data;
+        }
+        catch (error) {
             return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
             };
         }
     }
     async createStore(authToken, store) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         try {
             if (!store) {
                 return {
@@ -136,36 +129,35 @@ class Pathao {
                     message: "Contact number and secondary contact number cannot be the same",
                 };
             }
-            console.log("Store data:", store);
-            console.log("Auth token:", authToken);
-            const jsonData = JSON.stringify(store);
-            const response = await axios_1.default.post(`${this.baseUrl}/aladdin/api/v1/stores`, store, {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/stores`, {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${authToken}`,
                 },
+                body: JSON.stringify(store),
             });
-            return response.data;
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.status) !== null && _b !== void 0 ? _b : 500,
-                    message: (_e = (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.message) !== null && _e !== void 0 ? _e : error.message,
-                    code: (_g = (_f = error.response) === null || _f === void 0 ? void 0 : _f.data) === null || _g === void 0 ? void 0 : _g.code,
-                    error: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.errors,
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: data?.errors,
                 };
             }
+            return data;
+        }
+        catch (error) {
             return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
     async createOrder(authToken, order) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         try {
             if (!order) {
                 return {
@@ -243,33 +235,35 @@ class Pathao {
                 };
             }
             const removeAuthTokrn = { ...order, authToken: undefined };
-            const response = await axios_1.default.post(`${this.baseUrl}/aladdin/api/v1/orders`, removeAuthTokrn, {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/orders`, {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${authToken}`,
                 },
+                body: JSON.stringify(removeAuthTokrn),
             });
-            return response.data;
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.status) !== null && _b !== void 0 ? _b : 500,
-                    message: (_e = (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.message) !== null && _e !== void 0 ? _e : error.message,
-                    code: (_g = (_f = error.response) === null || _f === void 0 ? void 0 : _f.data) === null || _g === void 0 ? void 0 : _g.code,
-                    error: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.errors,
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: data?.errors,
                 };
             }
+            return data;
+        }
+        catch (error) {
             return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
     async createBulkOrder(pathaoOrder) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         try {
             // Validate the input
             if (!pathaoOrder || !pathaoOrder.orders || !pathaoOrder.authToken) {
@@ -370,39 +364,35 @@ class Pathao {
                 }
             }
             // Send the request with proper format
-            const response = await axios_1.default.post(`${this.baseUrl}/aladdin/api/v1/orders/bulk`, { orders: pathaoOrder.orders }, // Wrap orders array in an object with 'orders' key
-            {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/orders/bulk`, {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${pathaoOrder.authToken}`,
                 },
+                body: JSON.stringify({ orders: pathaoOrder.orders }), // Wrap orders array in an object with 'orders' key
             });
-            return response.data;
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                console.error("Axios error details:", {
-                    status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
-                    data: (_b = error.response) === null || _b === void 0 ? void 0 : _b.data,
-                    message: error.message,
-                });
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.status) !== null && _d !== void 0 ? _d : 500,
-                    message: (_g = (_f = (_e = error.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.message) !== null && _g !== void 0 ? _g : error.message,
-                    code: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.code,
-                    error: JSON.stringify((_l = (_k = error.response) === null || _k === void 0 ? void 0 : _k.data) === null || _l === void 0 ? void 0 : _l.errors),
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: JSON.stringify(data?.errors),
                 };
             }
+            return data;
+        }
+        catch (error) {
             return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
     async getStatusByCid(cidDetails) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         try {
             // Validate auth token
             if (!cidDetails.authToken) {
@@ -412,232 +402,210 @@ class Pathao {
             if (!cidDetails.cid) {
                 throw new Error("CID is required to get order status");
             }
-            const response = await axios_1.default.get(`${this.baseUrl}/aladdin/api/v1/orders/${cidDetails.cid}/info`, {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/orders/${cidDetails.cid}/info`, {
+                method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${cidDetails.authToken}`,
                 },
             });
-            return response.data;
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                console.error("Axios error details:", {
-                    status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
-                    data: (_b = error.response) === null || _b === void 0 ? void 0 : _b.data,
-                    message: error.message,
-                });
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.status) !== null && _d !== void 0 ? _d : 500,
-                    message: (_g = (_f = (_e = error.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.message) !== null && _g !== void 0 ? _g : error.message,
-                    code: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.code,
-                    error: JSON.stringify((_l = (_k = error.response) === null || _k === void 0 ? void 0 : _k.data) === null || _l === void 0 ? void 0 : _l.errors),
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: JSON.stringify(data?.errors),
                 };
             }
+            return data;
+        }
+        catch (error) {
             return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
     async getCitys(authToken) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         try {
-            const response = await axios_1.default.get(`${this.baseUrl}/aladdin/api/v1/city-list`, {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/city-list`, {
+                method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${authToken}`,
                 },
             });
-            return {
-                message: response.data.message,
-                type: response.data.type,
-                code: response.data.code,
-                data: response.data.data.data, // Access the nested 'data' array
-            };
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                console.error("Axios error details:", {
-                    status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
-                    data: (_b = error.response) === null || _b === void 0 ? void 0 : _b.data,
-                    message: error.message,
-                });
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.status) !== null && _d !== void 0 ? _d : 500,
-                    message: (_g = (_f = (_e = error.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.message) !== null && _g !== void 0 ? _g : error.message,
-                    code: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.code,
-                    error: JSON.stringify((_l = (_k = error.response) === null || _k === void 0 ? void 0 : _k.data) === null || _l === void 0 ? void 0 : _l.errors),
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: JSON.stringify(data?.errors),
                 };
             }
             return {
+                message: data.message,
+                type: data.type,
+                code: data.code,
+                data: data.data.data,
+            };
+        }
+        catch (error) {
+            return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
     async getZone(authToken, cityId) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         try {
-            const response = await axios_1.default.get(`${this.baseUrl}/aladdin/api/v1/cities/${cityId}/zone-list`, {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/cities/${cityId}/zone-list`, {
+                method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${authToken}`,
                 },
             });
-            return {
-                message: response.data.message,
-                type: response.data.type,
-                code: response.data.code,
-                data: response.data.data.data,
-            };
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                console.error("Axios error details:", {
-                    status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
-                    data: (_b = error.response) === null || _b === void 0 ? void 0 : _b.data,
-                    message: error.message,
-                });
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.status) !== null && _d !== void 0 ? _d : 500,
-                    message: (_g = (_f = (_e = error.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.message) !== null && _g !== void 0 ? _g : error.message,
-                    code: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.code,
-                    error: JSON.stringify((_l = (_k = error.response) === null || _k === void 0 ? void 0 : _k.data) === null || _l === void 0 ? void 0 : _l.errors),
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: JSON.stringify(data?.errors),
                 };
             }
             return {
+                message: data.message,
+                type: data.type,
+                code: data.code,
+                data: data.data.data,
+            };
+        }
+        catch (error) {
+            return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
     async get_area_list(authToken, zoneId) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         try {
-            const response = await axios_1.default.get(`${this.baseUrl}/aladdin/api/v1/zones/${zoneId}/area-list`, {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/zones/${zoneId}/area-list`, {
+                method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${authToken}`,
                 },
             });
-            return {
-                message: response.data.message,
-                type: response.data.type,
-                code: response.data.code,
-                data: response.data.data.data,
-            };
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                console.error("Axios error details:", {
-                    status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
-                    data: (_b = error.response) === null || _b === void 0 ? void 0 : _b.data,
-                    message: error.message,
-                });
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.status) !== null && _d !== void 0 ? _d : 500,
-                    message: (_g = (_f = (_e = error.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.message) !== null && _g !== void 0 ? _g : error.message,
-                    code: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.code,
-                    error: JSON.stringify((_l = (_k = error.response) === null || _k === void 0 ? void 0 : _k.data) === null || _l === void 0 ? void 0 : _l.errors),
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: JSON.stringify(data?.errors),
                 };
             }
             return {
+                message: data.message,
+                type: data.type,
+                code: data.code,
+                data: data.data.data,
+            };
+        }
+        catch (error) {
+            return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
     async price_plane(authToken, orderData) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         try {
-            const response = await axios_1.default.post(`${this.baseUrl}/aladdin/api/v1/merchant/price-plan`, orderData, {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/merchant/price-plan`, {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${authToken}`,
                 },
+                body: JSON.stringify(orderData),
             });
-            return response.data;
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                console.error("Axios error details:", {
-                    status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
-                    data: (_b = error.response) === null || _b === void 0 ? void 0 : _b.data,
-                    message: error.message,
-                });
+            const data = await response.json();
+            if (!response.ok) {
                 return {
-                    status: (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.status) !== null && _d !== void 0 ? _d : 500,
-                    message: (_g = (_f = (_e = error.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.message) !== null && _g !== void 0 ? _g : error.message,
-                    code: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.code,
-                    error: JSON.stringify((_l = (_k = error.response) === null || _k === void 0 ? void 0 : _k.data) === null || _l === void 0 ? void 0 : _l.errors),
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: JSON.stringify(data?.errors),
                 };
             }
+            return data;
+        }
+        catch (error) {
             return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
     async getAllStore(authToken) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         try {
-            const response = await axios_1.default.get(`${this.baseUrl}/aladdin/api/v1/stores`, {
+            const response = await fetch(`${this.baseUrl}/aladdin/api/v1/stores`, {
+                method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${authToken}`,
                 },
             });
+            const data = await response.json();
+            if (!response.ok) {
+                return {
+                    status: response.status,
+                    message: data?.message ?? response.statusText,
+                    code: data?.code,
+                    error: JSON.stringify(data?.errors),
+                };
+            }
             return {
-                message: response.data.message,
-                type: response.data.type,
-                code: response.data.code,
-                data: response.data.data.data,
+                message: data.message,
+                type: data.type,
+                code: data.code,
+                data: data.data.data,
                 pagination: {
-                    total: response.data.data.total,
-                    current_page: response.data.data.current_page,
-                    per_page: response.data.data.per_page,
-                    total_in_page: response.data.data.total_in_page,
-                    last_page: response.data.data.last_page,
-                    path: response.data.data.path,
-                    to: response.data.data.to,
-                    from: response.data.data.from,
-                    last_page_url: response.data.data.last_page_url,
-                    first_page_url: response.data.data.first_page_url,
+                    total: data.data.total,
+                    current_page: data.data.current_page,
+                    per_page: data.data.per_page,
+                    total_in_page: data.data.total_in_page,
+                    last_page: data.data.last_page,
+                    path: data.data.path,
+                    to: data.data.to,
+                    from: data.data.from,
+                    last_page_url: data.data.last_page_url,
+                    first_page_url: data.data.first_page_url,
                 },
             };
         }
         catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                console.error("Axios error details:", {
-                    status: (_a = error.response) === null || _a === void 0 ? void 0 : _a.status,
-                    data: (_b = error.response) === null || _b === void 0 ? void 0 : _b.data,
-                    message: error.message,
-                });
-                return {
-                    status: (_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.status) !== null && _d !== void 0 ? _d : 500,
-                    message: (_g = (_f = (_e = error.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.message) !== null && _g !== void 0 ? _g : error.message,
-                    code: (_j = (_h = error.response) === null || _h === void 0 ? void 0 : _h.data) === null || _j === void 0 ? void 0 : _j.code,
-                    error: JSON.stringify((_l = (_k = error.response) === null || _k === void 0 ? void 0 : _k.data) === null || _l === void 0 ? void 0 : _l.errors),
-                };
-            }
             return {
                 status: 500,
-                message: "An unexpected error occurred",
+                message: error?.message || "An unexpected error occurred",
                 code: undefined,
                 error: undefined,
             };
         }
     }
 }
-exports.default = Pathao;
+export { Pathao };

@@ -1,12 +1,11 @@
-import axios from "axios";
 import {
   Order_Data_For_Steadfast,
   Bulk_Order_For_Steadfast,
   Bulk_Order_Response_For_Steadfast,
   ErrorResponse,
   Create_Order_Response_Items_For_Steadfast,
-} from "../../types/steadfast";
-import { Steadfast_Config } from "../../types/config";
+} from "../../types/steadfast.js";
+import { Steadfast_Config } from "../../types/config.js";
 class Steadfast {
   private config: Steadfast_Config;
   private baseUrl: string;
@@ -16,7 +15,6 @@ class Steadfast {
     this.baseUrl = "https://portal.steadfast.com.bd/api/v1";
   }
 
-  
   private validator(
     orderData: Order_Data_For_Steadfast
   ): { status: number; errors: string } | null {
@@ -73,28 +71,30 @@ class Steadfast {
         };
       }
 
-      const response = await axios.post(
+      const response = await fetch(
         `${this.baseUrl}/create_order`,
-        orderData.order_details,
         {
+          method: "POST",
           headers: {
             "Api-Key": this.config.apiKey,
             "Secret-Key": this.config.apiSecret,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(orderData.order_details),
         }
       );
-      return response.data as Create_Order_Response_Items_For_Steadfast;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status || 500,
-          message: error.response?.data || error.message,
+          status: response.status,
+          message: data?.message || response.statusText,
         } as ErrorResponse;
       }
+      return data as Create_Order_Response_Items_For_Steadfast;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
       } as ErrorResponse;
     }
   }
@@ -143,40 +143,38 @@ class Steadfast {
         recipient_name: order.recipient_name,
         recipient_phone: order.recipient_phone,
         recipient_address: order.recipient_address,
-        cod_amount: order.cod_amount, // Convert to string
-        note: order.note || null, // Ensure null for undefined notes
+        cod_amount: order.cod_amount,
+        note: order.note || null,
       }));
 
       const requestPayload = {
-        data: JSON.stringify(formattedOrders), // Wrap in data property and stringify
+        data: JSON.stringify(formattedOrders),
       };
 
-      //console.log("Request Payload:", requestPayload);
-
-      const response = await axios.post(
+      const response = await fetch(
         `${this.baseUrl}/create_order/bulk-order`,
-        requestPayload,
         {
+          method: "POST",
           headers: {
             "Api-Key": this.config.apiKey,
             "Secret-Key": this.config.apiSecret,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(requestPayload),
         }
       );
-
-      return response.data as Bulk_Order_Response_For_Steadfast;
-    } catch (error: unknown) {
-      console.error("Error in createBulkOrder:", error);
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status || 500,
-          message: error.response?.data?.message || error.message,
+          status: response.status,
+          message: data?.message || response.statusText,
         } as ErrorResponse;
       }
+      return data as Bulk_Order_Response_For_Steadfast;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
       } as ErrorResponse;
     }
   }
@@ -187,25 +185,25 @@ class Steadfast {
         throw new Error("CID is required to get order status.");
       }
 
-      const response = await axios.get(`${this.baseUrl}/status_by_cid/${cid}`, {
-        // Fixed headers object syntax
+      const response = await fetch(`${this.baseUrl}/status_by_cid/${cid}`, {
+        method: "GET",
         headers: {
           "Api-Key": this.config.apiKey,
           "Secret-Key": this.config.apiSecret,
         },
       });
-
-      return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status || 500,
-          message: error.response?.data || error.message,
+          status: response.status,
+          message: data?.message || response.statusText,
         } as ErrorResponse;
       }
+      return data;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
       } as ErrorResponse;
     }
   }
@@ -216,98 +214,91 @@ class Steadfast {
         throw new Error("Invoice is required to get order status.");
       }
 
-      const response = await axios.get(
+      const response = await fetch(
         `${this.baseUrl}/status_by_invoice/${invoice}`,
         {
+          method: "GET",
           headers: {
             "Api-Key": this.config.apiKey,
             "Secret-Key": this.config.apiSecret,
           },
         }
       );
-
-      return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status || 500,
-          message: error.response?.data || error.message,
+          status: response.status,
+          message: data?.message || response.statusText,
         } as ErrorResponse;
       }
+      return data;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
       } as ErrorResponse;
     }
   }
 
-  async statusBytrackingcode(trackingcode : string) {
+  async statusBytrackingcode(trackingcode: string) {
     try {
       if (!trackingcode) {
         throw new Error("Tracking code is required to get order status.");
       }
 
-      const response = await axios.get(
+      const response = await fetch(
         `${this.baseUrl}/status_by_trackingcode/${trackingcode}`,
         {
-          // Fixed headers object syntax
+          method: "GET",
           headers: {
             "Api-Key": this.config.apiKey,
             "Secret-Key": this.config.apiSecret,
           },
         }
       );
-      if (!response.data) {
-        console.error("No data received from Steadfast API");
-      }
-
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status || 500,
-          message: error.response?.data || error.message,
+          status: response.status,
+          message: data?.message || response.statusText,
         } as ErrorResponse;
       }
+      return data;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
       } as ErrorResponse;
     }
-    }
-  
+  }
+
   async getBalance() {
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `${this.baseUrl}/get_balance`,
         {
-          // Fixed headers object syntax
+          method: "GET",
           headers: {
             "Api-Key": this.config.apiKey,
             "Secret-Key": this.config.apiSecret,
           },
         }
       );
-
-      if (!response.data) {
-        throw new Error("No data received from Steadfast API");
-      }
-
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
+      const data = await response.json();
+      if (!response.ok) {
         return {
-          status: error.response?.status || 500,
-          message: error.response?.data || error.message,
+          status: response.status,
+          message: data?.message || response.statusText,
         } as ErrorResponse;
       }
+      return data;
+    } catch (error: any) {
       return {
         status: 500,
-        message: "An unexpected error occurred",
+        message: error?.message || "An unexpected error occurred",
       } as ErrorResponse;
-    
     }
   }
 }
 
-export default Steadfast;
+export {Steadfast};

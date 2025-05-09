@@ -1,16 +1,15 @@
-
 import RouteXpress from "../src/index";
 
 const client = new RouteXpress({
   steadfast: {
-    apiKey: "",
-    apiSecret: "",
+    apiKey: "xlpuoemeb5mw2ymmklkehqlppclp1gmu",
+    apiSecret: "h6u3emofj23wpa6ywroufwae",
   },
   pathao: {
-    apiKey: "",
-    apiSecret: "",
-    username: "",
-    password: "",
+    apiKey: "y5eVvjXeEP",
+    apiSecret: "hboGsggPNVp6cJOQxzQ9q8oAY8eHCMeJKcUddWWv",
+    username: "mdip855@gmail.com",
+    password: "Dip3@nai",
   },
 });
 
@@ -175,7 +174,7 @@ const getOrderByCid = async () => {
         consignment_id: "DT0905255BZNFQ",
       },
     });
-    
+
     const pathaoResponse = await client.getOrderStatus({
       provider: "pathao",
       data: {
@@ -283,7 +282,6 @@ const createPathaoStore = async () => {
   }
 };
 
-
 const getCity = async () => {
   try {
     const authToken = await createAccessToken();
@@ -297,7 +295,6 @@ const getCity = async () => {
     process.exit(1);
   }
 };
-
 
 const getZone = async () => {
   try {
@@ -324,7 +321,7 @@ const getArea = async () => {
     console.log(err);
     process.exit(1);
   }
-}
+};
 
 const price_plane = async () => {
   try {
@@ -349,7 +346,7 @@ const price_plane = async () => {
     console.log(err);
     process.exit(1);
   }
-}
+};
 
 const getAllPathaoStore = async () => {
   try {
@@ -363,6 +360,6 @@ const getAllPathaoStore = async () => {
     console.log(err);
     process.exit(1);
   }
-}
+};
 
-getAllPathaoStore()
+getAllPathaoStore();
