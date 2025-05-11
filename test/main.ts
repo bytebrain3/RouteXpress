@@ -12,7 +12,7 @@ const client = new RouteXpress({
     password: "",
   },
   redx: {
-    apiKey:"",
+    apiKey: "",
     environment: "development", // or "development"
   },
 });
@@ -554,3 +554,5 @@ const calculateRedX = async () => {
     process.exit(1);
   }
 };
+
+createOrder();

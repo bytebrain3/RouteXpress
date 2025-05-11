@@ -49,7 +49,11 @@ class RouteXpress {
     }
   }
 
-  // Helper methods to safely access services
+  /**
+   * Safely access the Steadfast service.
+   * @returns {Steadfast} The Steadfast service instance.
+   * @throws {Error} If the Steadfast service is not configured.
+   */
   protected getSteadfast(): Steadfast {
     if (!this.steadfast) {
       throw new Error("Steadfast service is not configured");
@@ -57,6 +61,11 @@ class RouteXpress {
     return this.steadfast;
   }
 
+  /**
+   * Safely access the Pathao service.
+   * @returns {Pathao} The Pathao service instance.
+   * @throws {Error} If the Pathao service is not configured.
+   */
   protected getPathao(): Pathao {
     if (!this.pathao) {
       throw new Error("Pathao service is not configured");
@@ -64,6 +73,11 @@ class RouteXpress {
     return this.pathao;
   }
 
+  /**
+   * Safely access the Redx service.
+   * @returns {Redx} The Redx service instance.
+   * @throws {Error} If the Redx service is not configured.
+   */
   protected getRedx(): Redx {
     if (!this.redx) {
       throw new Error("Redx service is not configured");
@@ -71,6 +85,13 @@ class RouteXpress {
     return this.redx;
   }
 
+  /**
+   * Create an order for a specified provider.
+   * @param {"steadfast" | "pathao" | "redx"} provider - The delivery service provider.
+   * @param {Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder} orderData - The order data.
+   * @returns {Promise<any>} The response from the provider.
+   * @throws {Error} If the provider or order data is invalid.
+   */
   async createOrder(
     provider: "steadfast" | "pathao" | "redx",
     orderData: Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder
@@ -117,6 +138,13 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Create a bulk order for a specified provider.
+   * @param {"steadfast" | "pathao"} provider - The delivery service provider.
+   * @param {Bulk_Order_For_Steadfast | Bulk_Order_For_Pathao} allOrder - The bulk order data.
+   * @returns {Promise<any>} The response from the provider.
+   * @throws {Error} If the provider or bulk order data is invalid.
+   */
   async createBulkOrder(
     provider: "steadfast" | "pathao",
     allOrder: Bulk_Order_For_Steadfast | Bulk_Order_For_Pathao
@@ -155,6 +183,16 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the status of an order by its consignment ID.
+   * @param {Object} orderData - The order data containing provider and consignment ID.
+   * @param {string} orderData.provider - The delivery service provider.
+   * @param {Object} orderData.data - The data containing consignment ID and optional auth token.
+   * @param {string} orderData.data.consignment_id - The consignment ID of the order.
+   * @param {string} [orderData.data.authToken] - The optional auth token for Pathao orders.
+   * @returns {Promise<any>} The status of the order.
+   * @throws {Error} If the order data is invalid.
+   */
   async getOrderStatus(orderData: {
     provider: string;
     data: { consignment_id: string; authToken?: string };
@@ -193,6 +231,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the status of an order by its invoice number.
+   * @param {string} invoice - The invoice number of the order.
+   * @returns {Promise<any>} The status of the order.
+   * @throws {Error} If the invoice number is invalid.
+   */
   async statusByInvoice(invoice: string) {
     try {
       if (!invoice) {
@@ -208,6 +252,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the status of an order by its tracking code.
+   * @param {string} trackingcode - The tracking code of the order.
+   * @returns {Promise<any>} The status of the order.
+   * @throws {Error} If the tracking code is invalid.
+   */
   async statusBytrackingcode(trackingcode: string) {
     try {
       if (!trackingcode) {
@@ -223,6 +273,11 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the balance of the Steadfast account.
+   * @returns {Promise<any>} The balance information.
+   * @throws {Error} If there is an error retrieving the balance.
+   */
   async getSteadFastBalance() {
     try {
       return await this.getSteadfast().getBalance();
@@ -235,6 +290,11 @@ class RouteXpress {
   }
 
   //add pathao methods here
+  /**
+   * Create a new token for Pathao.
+   * @returns {Promise<any>} The response containing the new token.
+   * @throws {Error} If there is an error creating the token.
+   */
   async createPathaoToken() {
     try {
       return await this.getPathao().createNewToken();
@@ -246,6 +306,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Create a refresh token for Pathao.
+   * @param {string} refreshToken - The refresh token.
+   * @returns {Promise<any>} The response containing the new refresh token.
+   * @throws {Error} If there is an error creating the refresh token.
+   */
   async createPathaoRefreshToken(refreshToken: string) {
     try {
       return await this.getPathao().createRefresshToken(refreshToken);
@@ -257,6 +323,13 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Create a new store in Pathao.
+   * @param {string} authToken - The auth token for Pathao.
+   * @param {PathaoStore} storeData - The data for the new store.
+   * @returns {Promise<any>} The response containing the created store information.
+   * @throws {Error} If there is an error creating the store.
+   */
   async createPathaoStore(authToken: string, storeData: PathaoStore) {
     try {
       return await this.getPathao().createStore(authToken, storeData);
@@ -268,6 +341,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the list of cities for Pathao.
+   * @param {string} authToken - The auth token for Pathao.
+   * @returns {Promise<any>} The list of cities.
+   * @throws {Error} If there is an error retrieving the cities.
+   */
   async getPathaoCity(authToken: string) {
     try {
       return await this.getPathao().getCitys(authToken);
@@ -279,6 +358,13 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the list of zones in a city for Pathao.
+   * @param {string} authToken - The auth token for Pathao.
+   * @param {number} cityId - The ID of the city.
+   * @returns {Promise<any>} The list of zones in the city.
+   * @throws {Error} If there is an error retrieving the zones.
+   */
   async getPathaoZone(authToken: string, cityId: number) {
     try {
       return await this.getPathao().getZone(authToken, cityId);
@@ -290,6 +376,13 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the list of areas in a zone for Pathao.
+   * @param {string} authToken - The auth token for Pathao.
+   * @param {number} zoneId - The ID of the zone.
+   * @returns {Promise<any>} The list of areas in the zone.
+   * @throws {Error} If there is an error retrieving the areas.
+   */
   async getPathaoArea(authToken: string, zoneId: number) {
     try {
       return await this.getPathao().get_area_list(authToken, zoneId);
@@ -301,6 +394,13 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the price plan for an order in Pathao.
+   * @param {string} authToken - The auth token for Pathao.
+   * @param {any} orderData - The order data.
+   * @returns {Promise<any>} The price plan information.
+   * @throws {Error} If there is an error retrieving the price plan.
+   */
   async price_plane(authToken: string, orderData: any) {
     try {
       return await this.getPathao().price_plane(authToken, orderData);
@@ -312,6 +412,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get all stores for a Pathao account.
+   * @param {string} authToken - The auth token for Pathao.
+   * @returns {Promise<any>} The list of all stores.
+   * @throws {Error} If there is an error retrieving the stores.
+   */
   async getAllPathaoStore(authToken: string) {
     try {
       return await this.getPathao().getAllStore(authToken);
@@ -323,6 +429,16 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Create a new store in Redx.
+   * @param {Object} storeData - The data for the new store.
+   * @param {string} storeData.name - The name of the store.
+   * @param {string} storeData.phone - The phone number of the store.
+   * @param {string} storeData.address - The address of the store.
+   * @param {string} storeData.area_id - The area ID where the store is located.
+   * @returns {Promise<any>} The response containing the created store information.
+   * @throws {Error} If there is an error creating the store.
+   */
   async createRedXStore(storeData: {
     name: string;
     phone: string;
@@ -339,6 +455,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Track a parcel by its tracking code in Redx.
+   * @param {string} trackingcode - The tracking code of the parcel.
+   * @returns {Promise<any>} The tracking information of the parcel.
+   * @throws {Error} If the tracking code is invalid.
+   */
   async trackParcelByTrackingCode(trackingcode: string) {
     try {
       if (!trackingcode) {
@@ -354,6 +476,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get parcel information by its tracking code in Redx.
+   * @param {string} trackingcode - The tracking code of the parcel.
+   * @returns {Promise<any>} The parcel information.
+   * @throws {Error} If the tracking code is invalid.
+   */
   async getParcelInfoByTrackingCode(trackingcode: string) {
     try {
       if (!trackingcode) {
@@ -369,6 +497,13 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Update parcel information in Redx.
+   * @param {string} trackingcode - The tracking code of the parcel.
+   * @param {Object} data - The data to update.
+   * @returns {Promise<any>} The response from Redx.
+   * @throws {Error} If there is an error updating the parcel.
+   */
   async updateParcel(trackingcode: string, data: object) {
     try {
       return await this.getRedx().updateParcel(trackingcode, data);
@@ -380,6 +515,11 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the list of areas for Redx.
+   * @returns {Promise<any>} The list of areas.
+   * @throws {Error} If there is an error retrieving the areas.
+   */
   async getRedXAreaList() {
     try {
       return await this.getRedx().getAreaList();
@@ -391,6 +531,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get area information by postcode in Redx.
+   * @param {string} postcode - The postcode to lookup.
+   * @returns {Promise<any>} The area information.
+   * @throws {Error} If there is an error retrieving the area.
+   */
   async getResXAreabyPostcode(postcode: string) {
     try {
       return await this.getRedx().getAreaByPostcode(postcode);
@@ -402,6 +548,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get area information by district name in Redx.
+   * @param {string} district_name - The district name to lookup.
+   * @returns {Promise<any>} The area information.
+   * @throws {Error} If there is an error retrieving the area.
+   */
   async getRedXAreaBYDistrict_name(district_name: string) {
     try {
       return await this.getRedx().getAreaByDistrictName(district_name);
@@ -413,6 +565,11 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get the list of stores for Redx.
+   * @returns {Promise<any>} The list of stores.
+   * @throws {Error} If there is an error retrieving the stores.
+   */
   async getRedXStores() {
     try {
       return await this.getRedx().getStores();
@@ -424,6 +581,12 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Get pickup store information by store ID in Redx.
+   * @param {string} storeId - The ID of the store.
+   * @returns {Promise<any>} The pickup store information.
+   * @throws {Error} If there is an error retrieving the store information.
+   */
   async getPickupStoreInfo(storeId: string) {
     try {
       return await this.getRedx().getPickupStoreInfo(storeId);
@@ -435,6 +598,16 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Calculate the price for a Redx order.
+   * @param {Object} orderData - The order data for price calculation.
+   * @param {number} orderData.delivery_area_id - The delivery area ID.
+   * @param {number} orderData.pickup_area_id - The pickup area ID.
+   * @param {number} orderData.cash_collection_amount - The cash collection amount.
+   * @param {number} orderData.weight - The weight of the package.
+   * @returns {Promise<any>} The calculated price.
+   * @throws {Error} If any of the required fields are missing or if there is an error calculating the price.
+   */
   async calculateRedXPrice(orderData: {
     delivery_area_id: number;
     pickup_area_id: number;
