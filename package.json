@@ -1,0 +1,79 @@
+{
+  "name": "routexpress-bd",
+  "version": "0.0.2",
+  "description": "A TypeScript/JavaScript library for integrating Steadfast Pathao REDX delivery services",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./controllers/steadfast/index": {
+      "import": "./dist/controllers/steadfast/index.js",
+      "require": "./dist/controllers/steadfast/index.js"
+    },
+    "./controllers/pathao/index": {
+      "import": "./dist/controllers/pathao/index.js",
+      "require": "./dist/controllers/pathao/index.js"
+    },
+    "./controllers/redx/index": {
+      "import": "./dist/controllers/redx/index.js",
+      "require": "./dist/controllers/redx/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "node --loader ts-node/esm test/main.ts",
+    "start": "ts-node test/main.ts"
+  },
+  "keywords": [
+    "delivery",
+    "steadfast",
+    "pathao",
+    "redx",
+    "delivery-service",
+    "delivery-api",
+    "delivery-management",
+    "logistics-api",
+    "logistics-management",
+    "logistics",
+    "bangladesh"
+  ],
+  "author": "Dip",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bytebrain3/RouteXpress.git"
+  },
+  "packageManager": "pnpm@10.7.1",
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.0.0"
+  },
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "dist",
+    "module": "commonjs",
+    "target": "es2019",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*"
+  ]
+}
