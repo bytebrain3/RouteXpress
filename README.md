@@ -5,12 +5,12 @@
 
 ## 📦 NPM Stats & Info
 
+
+
+![npm downloads total](https://img.shields.io/npm/dt/routexpress-bd)
 ![npm version](https://img.shields.io/npm/v/routexpress-bd)
 ![npm downloads weekly](https://img.shields.io/npm/dw/routexpress-bd)
 ![npm downloads monthly](https://img.shields.io/npm/dm/routexpress-bd)
-![npm downloads total](https://img.shields.io/npm/dt/routexpress-bd)
-![npm license](https://img.shields.io/npm/l/routexpress-bd)
-![node version](https://img.shields.io/node/v/routexpress-bd)
 
 
 
