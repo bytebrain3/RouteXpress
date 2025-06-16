@@ -2,7 +2,16 @@
 
 ![RouteXpress Logo](/public/route.png)
 
-![npm](https://img.shields.io/npm/dt/routexpress-bd)
+
+## 📦 NPM Stats & Info
+
+![npm version](https://img.shields.io/npm/v/routexpress-bd)
+![npm downloads weekly](https://img.shields.io/npm/dw/routexpress-bd)
+![npm downloads monthly](https://img.shields.io/npm/dm/routexpress-bd)
+![npm downloads total](https://img.shields.io/npm/dt/routexpress-bd)
+![npm license](https://img.shields.io/npm/l/routexpress-bd)
+![node version](https://img.shields.io/node/v/routexpress-bd)
+
 
 
 A Node.js library to unify and manage courier services in Bangladesh (Pathao, Steadfast, etc.).
