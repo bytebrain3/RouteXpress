@@ -1,5 +1,5 @@
 import {
-  TookenIssueResponse,
+  TokenIssueResponse,
   ErrorResponse,
   PathaoStore,
   PathaoStoreResponse,
@@ -11,7 +11,7 @@ import {
   PathaoPriceResponse,
   PathaoAreaResponse,
   PathaoOrderPiceData,
-  PathaoAllStoreResponse
+  PathaoAllStoreResponse,
 } from "../../types/pathao.js"; // updated with .js
 
 import { Pathao_Config } from "../../types/config.js"; // updated with .js
@@ -25,7 +25,7 @@ class Pathao {
     this.baseUrl = "https://api-hermes.pathao.com";
   }
 
-  async createNewToken(): Promise<TookenIssueResponse | ErrorResponse> {
+  async createNewToken(): Promise<TokenIssueResponse | ErrorResponse> {
     try {
       const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/issue-token`,
@@ -39,7 +39,7 @@ class Pathao {
             username: this.config.username ?? "",
             password: this.config.password ?? "",
           }),
-        }
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -48,7 +48,7 @@ class Pathao {
           message: data?.message ?? response.statusText,
         } as ErrorResponse;
       }
-      return data as TookenIssueResponse;
+      return data as TokenIssueResponse;
     } catch (error: any) {
       return {
         status: 500,
@@ -57,9 +57,9 @@ class Pathao {
     }
   }
 
-  async createRefresshToken(
-    refreshToken: string
-  ): Promise<TookenIssueResponse | ErrorResponse> {
+  async createRefreshToken(
+    refreshToken: string,
+  ): Promise<TokenIssueResponse | ErrorResponse> {
     try {
       const response = await fetch(
         `${this.baseUrl}/aladdin/api/v1/issue-token`,
@@ -72,7 +72,7 @@ class Pathao {
             grant_type: "refresh_token",
             refresh_token: refreshToken,
           }),
-        }
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -81,7 +81,7 @@ class Pathao {
           message: data?.message ?? response.statusText,
         } as ErrorResponse;
       }
-      return data as TookenIssueResponse;
+      return data as TokenIssueResponse;
     } catch (error: any) {
       return {
         status: 500,
@@ -92,7 +92,7 @@ class Pathao {
 
   async createStore(
     authToken: string,
-    store: PathaoStore
+    store: PathaoStore,
   ): Promise<PathaoStoreResponse | ErrorResponse> {
     try {
       if (!store) {
@@ -166,17 +166,14 @@ class Pathao {
             "Contact number and secondary contact number cannot be the same",
         } as ErrorResponse;
       }
-      const response = await fetch(
-        `${this.baseUrl}/aladdin/api/v1/stores`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(store),
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/aladdin/api/v1/stores`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(store),
+      });
       const data = await response.json();
       if (!response.ok) {
         return {
@@ -294,17 +291,14 @@ class Pathao {
         } as ErrorResponse;
       }
       const removeAuthTokrn = { ...order, authToken: undefined };
-      const response = await fetch(
-        `${this.baseUrl}/aladdin/api/v1/orders`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(removeAuthTokrn),
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/aladdin/api/v1/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(removeAuthTokrn),
+      });
       const data = await response.json();
       if (!response.ok) {
         return {
@@ -326,7 +320,7 @@ class Pathao {
   }
 
   async createBulkOrder(
-    pathaoOrder: Bulk_Order_For_Pathao
+    pathaoOrder: Bulk_Order_For_Pathao,
   ): Promise<Bulk_Order_For_Pathao_Response[] | ErrorResponse> {
     try {
       // Validate the input
@@ -470,7 +464,7 @@ class Pathao {
             Authorization: `Bearer ${pathaoOrder.authToken}`,
           },
           body: JSON.stringify({ orders: pathaoOrder.orders }), // Wrap orders array in an object with 'orders' key
-        }
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -512,7 +506,7 @@ class Pathao {
             "Content-Type": "application/json",
             Authorization: `Bearer ${cidDetails.authToken}`,
           },
-        }
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -535,19 +529,16 @@ class Pathao {
   }
 
   async getCitys(
-    authToken: string
+    authToken: string,
   ): Promise<PathaoCityResponse | ErrorResponse> {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/aladdin/api/v1/city-list`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/aladdin/api/v1/city-list`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
       const data = await response.json();
       if (!response.ok) {
         return {
@@ -575,7 +566,7 @@ class Pathao {
 
   async getZone(
     authToken: string,
-    cityId: number
+    cityId: number,
   ): Promise<PathaoZoneResponse | ErrorResponse> {
     try {
       const response = await fetch(
@@ -586,7 +577,7 @@ class Pathao {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
-        }
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -615,7 +606,7 @@ class Pathao {
 
   async get_area_list(
     authToken: string,
-    zoneId: number
+    zoneId: number,
   ): Promise<PathaoAreaResponse | ErrorResponse> {
     try {
       const response = await fetch(
@@ -626,7 +617,7 @@ class Pathao {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
-        }
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -655,7 +646,7 @@ class Pathao {
 
   async price_plane(
     authToken: string,
-    orderData: PathaoOrderPiceData
+    orderData: PathaoOrderPiceData,
   ): Promise<PathaoPriceResponse | ErrorResponse> {
     try {
       const response = await fetch(
@@ -667,7 +658,7 @@ class Pathao {
             Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify(orderData),
-        }
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -690,19 +681,16 @@ class Pathao {
   }
 
   async getAllStore(
-    authToken: string
+    authToken: string,
   ): Promise<PathaoAllStoreResponse | ErrorResponse> {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/aladdin/api/v1/stores`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/aladdin/api/v1/stores`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
       const data = await response.json();
       if (!response.ok) {
         return {
@@ -741,4 +729,4 @@ class Pathao {
   }
 }
 
-export {Pathao};
+export { Pathao };

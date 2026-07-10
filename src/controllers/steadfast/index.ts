@@ -4,15 +4,22 @@ import {
   Bulk_Order_Response_For_Steadfast,
   ErrorResponse,
   Create_Order_Response_Items_For_Steadfast,
+  Delivery_Status_Response,
+  Balance_Response,
+  Return_Request,
+  Create_Return_Request_Params,
+  Payment,
+  Police_Station,
 } from "../../types/steadfast.js";
 import { Steadfast_Config } from "../../types/config.js";
+
 class Steadfast {
   private config: Steadfast_Config;
   private baseUrl: string;
 
   constructor(config: Steadfast_Config) {
     this.config = config;
-    this.baseUrl = "https://portal.steadfast.com.bd/api/v1";
+    this.baseUrl = "https://portal.packzy.com/api/v1";
   }
 
   private validator(
@@ -61,7 +68,9 @@ class Steadfast {
     return null;
   }
 
-  async createOrder(orderData: Order_Data_For_Steadfast) {
+  async createOrder(
+    orderData: Order_Data_For_Steadfast
+  ): Promise<Create_Order_Response_Items_For_Steadfast | ErrorResponse> {
     try {
       const validationResult = this.validator(orderData);
       if (validationResult) {
@@ -71,18 +80,15 @@ class Steadfast {
         };
       }
 
-      const response = await fetch(
-        `${this.baseUrl}/create_order`,
-        {
-          method: "POST",
-          headers: {
-            "Api-Key": this.config.apiKey,
-            "Secret-Key": this.config.apiSecret,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(orderData.order_details),
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/create_order`, {
+        method: "POST",
+        headers: {
+          "Api-Key": this.config.apiKey,
+          "Secret-Key": this.config.apiSecret,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData.order_details),
+      });
       const data = await response.json();
       if (!response.ok) {
         return {
@@ -99,7 +105,9 @@ class Steadfast {
     }
   }
 
-  async createBulkOrder(bulkOrder: Bulk_Order_For_Steadfast) {
+  async createBulkOrder(
+    bulkOrder: Bulk_Order_For_Steadfast
+  ): Promise<Bulk_Order_Response_For_Steadfast | ErrorResponse> {
     try {
       if (!bulkOrder || !bulkOrder.orders) {
         throw new Error("Bulk order data with orders array is required.");
@@ -116,7 +124,6 @@ class Steadfast {
         throw new Error("Cannot exceed 500 orders in a bulk request.");
       }
 
-      // Validate each order in the bulk request
       for (const order of orders) {
         const validationResult = this.validator({
           order_details: {
@@ -137,7 +144,6 @@ class Steadfast {
         }
       }
 
-      // Transform orders to match API expected format
       const formattedOrders = orders.map((order) => ({
         invoice: order.invoice,
         recipient_name: order.recipient_name,
@@ -179,7 +185,7 @@ class Steadfast {
     }
   }
 
-  async getStatusByCid(cid: string) {
+  async getStatusByCid(cid: string): Promise<Delivery_Status_Response | ErrorResponse> {
     try {
       if (!cid) {
         throw new Error("CID is required to get order status.");
@@ -199,7 +205,7 @@ class Steadfast {
           message: data?.message || response.statusText,
         } as ErrorResponse;
       }
-      return data;
+      return data as Delivery_Status_Response;
     } catch (error: any) {
       return {
         status: 500,
@@ -208,7 +214,7 @@ class Steadfast {
     }
   }
 
-  async getStatusByInvoice(invoice: string) {
+  async getStatusByInvoice(invoice: string): Promise<Delivery_Status_Response | ErrorResponse> {
     try {
       if (!invoice) {
         throw new Error("Invoice is required to get order status.");
@@ -231,7 +237,7 @@ class Steadfast {
           message: data?.message || response.statusText,
         } as ErrorResponse;
       }
-      return data;
+      return data as Delivery_Status_Response;
     } catch (error: any) {
       return {
         status: 500,
@@ -240,7 +246,7 @@ class Steadfast {
     }
   }
 
-  async statusBytrackingcode(trackingcode: string) {
+  async statusBytrackingcode(trackingcode: string): Promise<Delivery_Status_Response | ErrorResponse> {
     try {
       if (!trackingcode) {
         throw new Error("Tracking code is required to get order status.");
@@ -263,7 +269,7 @@ class Steadfast {
           message: data?.message || response.statusText,
         } as ErrorResponse;
       }
-      return data;
+      return data as Delivery_Status_Response;
     } catch (error: any) {
       return {
         status: 500,
@@ -272,18 +278,15 @@ class Steadfast {
     }
   }
 
-  async getBalance() {
+  async getBalance(): Promise<Balance_Response | ErrorResponse> {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/get_balance`,
-        {
-          method: "GET",
-          headers: {
-            "Api-Key": this.config.apiKey,
-            "Secret-Key": this.config.apiSecret,
-          },
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/get_balance`, {
+        method: "GET",
+        headers: {
+          "Api-Key": this.config.apiKey,
+          "Secret-Key": this.config.apiSecret,
+        },
+      });
       const data = await response.json();
       if (!response.ok) {
         return {
@@ -291,7 +294,175 @@ class Steadfast {
           message: data?.message || response.statusText,
         } as ErrorResponse;
       }
-      return data;
+      return data as Balance_Response;
+    } catch (error: any) {
+      return {
+        status: 500,
+        message: error?.message || "An unexpected error occurred",
+      } as ErrorResponse;
+    }
+  }
+
+  async createReturnRequest(
+    params: Create_Return_Request_Params
+  ): Promise<Return_Request | ErrorResponse> {
+    try {
+      if (!params.consignment_id && !params.invoice && !params.tracking_code) {
+        throw new Error(
+          "At least one of consignment_id, invoice, or tracking_code is required."
+        );
+      }
+
+      const response = await fetch(`${this.baseUrl}/create_return_request`, {
+        method: "POST",
+        headers: {
+          "Api-Key": this.config.apiKey,
+          "Secret-Key": this.config.apiSecret,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(params),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return {
+          status: response.status,
+          message: data?.message || response.statusText,
+        } as ErrorResponse;
+      }
+      return data as Return_Request;
+    } catch (error: any) {
+      return {
+        status: 500,
+        message: error?.message || "An unexpected error occurred",
+      } as ErrorResponse;
+    }
+  }
+
+  async getReturnRequest(id: number): Promise<Return_Request | ErrorResponse> {
+    try {
+      if (!id) {
+        throw new Error("Return request ID is required.");
+      }
+
+      const response = await fetch(`${this.baseUrl}/get_return_request/${id}`, {
+        method: "GET",
+        headers: {
+          "Api-Key": this.config.apiKey,
+          "Secret-Key": this.config.apiSecret,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return {
+          status: response.status,
+          message: data?.message || response.statusText,
+        } as ErrorResponse;
+      }
+      return data as Return_Request;
+    } catch (error: any) {
+      return {
+        status: 500,
+        message: error?.message || "An unexpected error occurred",
+      } as ErrorResponse;
+    }
+  }
+
+  async getReturnRequests(): Promise<Return_Request[] | ErrorResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/get_return_requests`, {
+        method: "GET",
+        headers: {
+          "Api-Key": this.config.apiKey,
+          "Secret-Key": this.config.apiSecret,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return {
+          status: response.status,
+          message: data?.message || response.statusText,
+        } as ErrorResponse;
+      }
+      return data as Return_Request[];
+    } catch (error: any) {
+      return {
+        status: 500,
+        message: error?.message || "An unexpected error occurred",
+      } as ErrorResponse;
+    }
+  }
+
+  async getPayments(): Promise<Payment[] | ErrorResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/payments`, {
+        method: "GET",
+        headers: {
+          "Api-Key": this.config.apiKey,
+          "Secret-Key": this.config.apiSecret,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return {
+          status: response.status,
+          message: data?.message || response.statusText,
+        } as ErrorResponse;
+      }
+      return data as Payment[];
+    } catch (error: any) {
+      return {
+        status: 500,
+        message: error?.message || "An unexpected error occurred",
+      } as ErrorResponse;
+    }
+  }
+
+  async getSinglePayment(paymentId: number): Promise<Payment | ErrorResponse> {
+    try {
+      if (!paymentId) {
+        throw new Error("Payment ID is required.");
+      }
+
+      const response = await fetch(`${this.baseUrl}/payments/${paymentId}`, {
+        method: "GET",
+        headers: {
+          "Api-Key": this.config.apiKey,
+          "Secret-Key": this.config.apiSecret,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return {
+          status: response.status,
+          message: data?.message || response.statusText,
+        } as ErrorResponse;
+      }
+      return data as Payment;
+    } catch (error: any) {
+      return {
+        status: 500,
+        message: error?.message || "An unexpected error occurred",
+      } as ErrorResponse;
+    }
+  }
+
+  async getPoliceStations(): Promise<Police_Station[] | ErrorResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/police_stations`, {
+        method: "GET",
+        headers: {
+          "Api-Key": this.config.apiKey,
+          "Secret-Key": this.config.apiSecret,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return {
+          status: response.status,
+          message: data?.message || response.statusText,
+        } as ErrorResponse;
+      }
+      return data as Police_Station[];
     } catch (error: any) {
       return {
         status: 500,
@@ -301,4 +472,4 @@ class Steadfast {
   }
 }
 
-export {Steadfast};
+export { Steadfast };

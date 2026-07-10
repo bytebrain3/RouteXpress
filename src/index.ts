@@ -1,6 +1,7 @@
 import {
   Order_Data_For_Steadfast,
   Bulk_Order_For_Steadfast,
+  Create_Return_Request_Params,
 } from "./types/steadfast.js"; // import type of steadfast
 import {
   PathaoStore,
@@ -44,7 +45,7 @@ class RouteXpress {
     // Ensure at least one service is configured
     if (!this.steadfast && !this.pathao && !this.redx) {
       throw new Error(
-        "At least one delivery service provider must be configured"
+        "At least one delivery service provider must be configured",
       );
     }
   }
@@ -94,7 +95,7 @@ class RouteXpress {
    */
   async createOrder(
     provider: "steadfast" | "pathao" | "redx",
-    orderData: Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder
+    orderData: Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder,
   ) {
     try {
       if (!orderData || !provider) {
@@ -117,7 +118,7 @@ class RouteXpress {
         }
         return await this.getPathao().createOrder(
           pathaoOrder.authToken,
-          pathaoOrder
+          pathaoOrder,
         );
       }
 
@@ -147,7 +148,7 @@ class RouteXpress {
    */
   async createBulkOrder(
     provider: "steadfast" | "pathao",
-    allOrder: Bulk_Order_For_Steadfast | Bulk_Order_For_Pathao
+    allOrder: Bulk_Order_For_Steadfast | Bulk_Order_For_Pathao,
   ) {
     try {
       if (!allOrder || !provider) {
@@ -167,7 +168,7 @@ class RouteXpress {
         const pathaoOrder = allOrder as Bulk_Order_For_Pathao;
         if (!pathaoOrder?.orders || !pathaoOrder.authToken) {
           throw new Error(
-            "Orders and auth token are required for Pathao bulk orders"
+            "Orders and auth token are required for Pathao bulk orders",
           );
         }
 
@@ -207,7 +208,7 @@ class RouteXpress {
       switch (orderData.provider.toLowerCase()) {
         case "steadfast":
           const result = await this.getSteadfast().getStatusByCid(
-            orderData.data.consignment_id
+            orderData.data.consignment_id,
           );
           return result;
         case "pathao":
@@ -289,6 +290,105 @@ class RouteXpress {
     }
   }
 
+  /**
+   * Create a return request for a Steadfast consignment.
+   * @param {Create_Return_Request_Params} params - The return request parameters.
+   * @returns {Promise<any>} The created return request.
+   * @throws {Error} If there is an error creating the return request.
+   */
+  async createSteadfastReturnRequest(params: Create_Return_Request_Params) {
+    try {
+      return await this.getSteadfast().createReturnRequest(params);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  /**
+   * Get a single return request by ID from Steadfast.
+   * @param {number} id - The return request ID.
+   * @returns {Promise<any>} The return request details.
+   * @throws {Error} If there is an error retrieving the return request.
+   */
+  async getSteadfastReturnRequest(id: number) {
+    try {
+      return await this.getSteadfast().getReturnRequest(id);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  /**
+   * Get all return requests from Steadfast.
+   * @returns {Promise<any>} The list of return requests.
+   * @throws {Error} If there is an error retrieving the return requests.
+   */
+  async getSteadfastReturnRequests() {
+    try {
+      return await this.getSteadfast().getReturnRequests();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  /**
+   * Get all payments from Steadfast.
+   * @returns {Promise<any>} The list of payments.
+   * @throws {Error} If there is an error retrieving the payments.
+   */
+  async getSteadfastPayments() {
+    try {
+      return await this.getSteadfast().getPayments();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  /**
+   * Get a single payment with consignments from Steadfast.
+   * @param {number} paymentId - The payment ID.
+   * @returns {Promise<any>} The payment details with consignments.
+   * @throws {Error} If there is an error retrieving the payment.
+   */
+  async getSteadfastSinglePayment(paymentId: number) {
+    try {
+      return await this.getSteadfast().getSinglePayment(paymentId);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  /**
+   * Get all police stations from Steadfast.
+   * @returns {Promise<any>} The list of police stations.
+   * @throws {Error} If there is an error retrieving the police stations.
+   */
+  async getSteadfastPoliceStations() {
+    try {
+      return await this.getSteadfast().getPoliceStations();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
   //add pathao methods here
   /**
    * Create a new token for Pathao.
@@ -314,7 +414,7 @@ class RouteXpress {
    */
   async createPathaoRefreshToken(refreshToken: string) {
     try {
-      return await this.getPathao().createRefresshToken(refreshToken);
+      return await this.getPathao().createRefreshToken(refreshToken);
     } catch (error) {
       if (error instanceof Error) {
         throw error;
@@ -622,7 +722,7 @@ class RouteXpress {
         !orderData.weight
       ) {
         throw new Error(
-          "All fields (delivery_area_id, pickup_area_id, cash_collection_amount, weight) are required"
+          "All fields (delivery_area_id, pickup_area_id, cash_collection_amount, weight) are required",
         );
       }
 

@@ -1,4 +1,4 @@
-interface TookenIssueResponse {
+interface TokenIssueResponse {
   token_type: string;
   expires_in: number;
   access_token: string;
@@ -184,7 +184,7 @@ interface PathaoAllStoreResponse {
 }
 
 export {
-  TookenIssueResponse,
+  TokenIssueResponse,
   ErrorResponse,
   PathaoStore,
   PathaoStoreResponse,

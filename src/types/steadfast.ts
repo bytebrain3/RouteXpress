@@ -4,9 +4,14 @@ interface Order_Details_For_Steadfast {
   invoice: string;
   recipient_name: string;
   recipient_phone: string;
+  alternative_phone?: string;
+  recipient_email?: string;
   recipient_address: string;
   cod_amount: number;
   note?: string;
+  item_description?: string;
+  total_lot?: number;
+  delivery_type?: number; // 0 = home delivery, 1 = point delivery/hub pickup
 }
 
 interface Order_Data_For_Steadfast {
@@ -14,25 +19,31 @@ interface Order_Data_For_Steadfast {
 }
 
 interface Create_Order_Response_Items_For_Steadfast {
-  invoice: string; // Must be Unique and can be alpha-numeric including hyphens and underscores.
-  recipient_name: string; // Within 100 characters.
-  recipient_phone: string; // Must be 11 Digits Phone number
-  recipient_address: string; // Recipient's address within 250 characters.
-  cod_amount: number; // Cash on delivery amount in BDT including all charges. Can't be less than 0.
-  note?: string; // Delivery instructions or other notes.
-  consignment_id: number; // consignment_id the id of steadfast
-  tracking_code: string; // tracking number of steadfast (updated to string based on the provided JSON)
+  invoice: string;
+  recipient_name: string;
+  recipient_phone: string;
+  recipient_address: string;
+  cod_amount: number;
+  note?: string;
+  consignment_id: number;
+  tracking_code: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
-
-
 interface Bulk_Order_Item_For_Steadfast {
-  invoice: string; // Must be Unique and can be alpha-numeric including hyphens and underscores.
-  recipient_name: string; // Within 100 characters.
-  recipient_phone: string; // Must be 11 Digits Phone number
-  recipient_address: string; // Recipient's address within 250 characters.
-  cod_amount: number; // Cash on delivery amount in BDT including all charges. Can't be less than 0.
-  note?: string; // Delivery instructions or other notes.
+  invoice: string;
+  recipient_name: string;
+  recipient_phone: string;
+  alternative_phone?: string;
+  recipient_email?: string;
+  recipient_address: string;
+  cod_amount: number;
+  note?: string;
+  item_description?: string;
+  total_lot?: number;
+  delivery_type?: number;
 }
 
 interface Bulk_Order_For_Steadfast {
@@ -40,26 +51,79 @@ interface Bulk_Order_For_Steadfast {
 }
 
 interface Bulk_Order_Response_Items_For_Steadfast {
-  invoice: string; // Must be Unique and can be alpha-numeric including hyphens and underscores.
-  recipient_name: string; // Within 100 characters.
-  recipient_phone: string; // Must be 11 Digits Phone number
-  recipient_address: string; // Recipient's address within 250 characters.
-  cod_amount: number; // Cash on delivery amount in BDT including all charges. Can't be less than 0.
-  note?: string; // Delivery instructions or other notes.
-  consignment_id: number | null; // consignment_id the id of steadfast, can be null in case of error
-  tracking_code: string | null; // tracking number of steadfast, can be null in case of error
-  status: "success" | "error"; // Status of the response item
+  invoice: string;
+  recipient_name: string;
+  recipient_phone: string;
+  recipient_address: string;
+  cod_amount: number;
+  note?: string;
+  consignment_id: number | null;
+  tracking_code: string | null;
+  status: "success" | "error";
 }
 
 interface Bulk_Order_Response_For_Steadfast {
-  status?: number; // HTTP status code
-  message?: string; // Message from the API
-  data: Bulk_Order_Response_Items_For_Steadfast[]; // Array of response items
+  status?: number;
+  message?: string;
+  data: Bulk_Order_Response_Items_For_Steadfast[];
 }
 
 interface ErrorResponse {
-    status : number,
-    message : string,
+  status: number;
+  message: string;
+}
+
+interface Delivery_Status_Response {
+  status: number;
+  delivery_status: string;
+}
+
+interface Balance_Response {
+  status: number;
+  current_balance: number;
+}
+
+interface Return_Request {
+  id: number;
+  user_id: number;
+  consignment_id: number;
+  reason: string | null;
+  status: "pending" | "approved" | "processing" | "completed" | "cancelled";
+  created_at: string;
+  updated_at: string;
+}
+
+interface Create_Return_Request_Params {
+  consignment_id?: number;
+  invoice?: string;
+  tracking_code?: string;
+  reason?: string;
+}
+
+interface Payment {
+  id: number;
+  user_id: number;
+  amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  consignments?: Payment_Consignment[];
+}
+
+interface Payment_Consignment {
+  id: number;
+  consignment_id: number;
+  invoice: string;
+  tracking_code: string;
+  cod_amount: number;
+  status: string;
+}
+
+interface Police_Station {
+  id: number;
+  name: string;
+  district_id: number;
+  division_id: number;
 }
 
 export {
@@ -70,5 +134,12 @@ export {
   Bulk_Order_Response_For_Steadfast,
   Bulk_Order_Response_Items_For_Steadfast,
   ErrorResponse,
-  Create_Order_Response_Items_For_Steadfast
+  Create_Order_Response_Items_For_Steadfast,
+  Delivery_Status_Response,
+  Balance_Response,
+  Return_Request,
+  Create_Return_Request_Params,
+  Payment,
+  Payment_Consignment,
+  Police_Station,
 };
