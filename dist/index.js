@@ -233,6 +233,105 @@ class RouteXpress {
             throw new Error("An unknown error occurred");
         }
     }
+    /**
+     * Create a return request for a Steadfast consignment.
+     * @param {Create_Return_Request_Params} params - The return request parameters.
+     * @returns {Promise<any>} The created return request.
+     * @throws {Error} If there is an error creating the return request.
+     */
+    async createSteadfastReturnRequest(params) {
+        try {
+            return await this.getSteadfast().createReturnRequest(params);
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error("An unknown error occurred");
+        }
+    }
+    /**
+     * Get a single return request by ID from Steadfast.
+     * @param {number} id - The return request ID.
+     * @returns {Promise<any>} The return request details.
+     * @throws {Error} If there is an error retrieving the return request.
+     */
+    async getSteadfastReturnRequest(id) {
+        try {
+            return await this.getSteadfast().getReturnRequest(id);
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error("An unknown error occurred");
+        }
+    }
+    /**
+     * Get all return requests from Steadfast.
+     * @returns {Promise<any>} The list of return requests.
+     * @throws {Error} If there is an error retrieving the return requests.
+     */
+    async getSteadfastReturnRequests() {
+        try {
+            return await this.getSteadfast().getReturnRequests();
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error("An unknown error occurred");
+        }
+    }
+    /**
+     * Get all payments from Steadfast.
+     * @returns {Promise<any>} The list of payments.
+     * @throws {Error} If there is an error retrieving the payments.
+     */
+    async getSteadfastPayments() {
+        try {
+            return await this.getSteadfast().getPayments();
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error("An unknown error occurred");
+        }
+    }
+    /**
+     * Get a single payment with consignments from Steadfast.
+     * @param {number} paymentId - The payment ID.
+     * @returns {Promise<any>} The payment details with consignments.
+     * @throws {Error} If there is an error retrieving the payment.
+     */
+    async getSteadfastSinglePayment(paymentId) {
+        try {
+            return await this.getSteadfast().getSinglePayment(paymentId);
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error("An unknown error occurred");
+        }
+    }
+    /**
+     * Get all police stations from Steadfast.
+     * @returns {Promise<any>} The list of police stations.
+     * @throws {Error} If there is an error retrieving the police stations.
+     */
+    async getSteadfastPoliceStations() {
+        try {
+            return await this.getSteadfast().getPoliceStations();
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error("An unknown error occurred");
+        }
+    }
     //add pathao methods here
     /**
      * Create a new token for Pathao.
