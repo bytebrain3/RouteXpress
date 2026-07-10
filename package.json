@@ -1,6 +1,6 @@
 {
   "name": "routexpress-bd",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A TypeScript/JavaScript library for integrating Steadfast Pathao REDX delivery services",
   "type": "module",
   "main": "dist/index.js",
