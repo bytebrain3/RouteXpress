@@ -1,5 +1,3 @@
-
-
 interface Order_Details_For_Steadfast {
   invoice: string;
   recipient_name: string;
@@ -14,6 +12,25 @@ interface Order_Details_For_Steadfast {
   delivery_type?: number; // 0 = home delivery, 1 = point delivery/hub pickup
 }
 
+/**
+ * Interface for order data structure used in Steadfast API
+ * This interface defines the structure of the order data that will be sent to the Steadfast API.
+ * order = {
+ *   order_details: {
+ *     invoice: string;
+ *     recipient_name: string;
+ *     recipient_phone: string;
+ *     alternative_phone?: string;
+ *     recipient_email?: string;
+ *     recipient_address: string;
+ *     cod_amount: number;
+ *     note?: string;
+ *     item_description?: string;
+ *     total_lot?: number;
+ *     delivery_type?: number; // 0 = home delivery, 1 = point delivery/hub pickup
+ *   }
+ * }
+ */
 interface Order_Data_For_Steadfast {
   order_details: Order_Details_For_Steadfast;
 }

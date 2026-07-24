@@ -2,25 +2,53 @@ import {
   Order_Data_For_Steadfast,
   Bulk_Order_For_Steadfast,
   Create_Return_Request_Params,
-} from "./types/steadfast.js"; // import type of steadfast
+} from "@/types/steadfast.js";
 import {
   PathaoStore,
   CreatePathaoOrder,
   Bulk_Order_For_Pathao,
-} from "./types/pathao.js"; // import type of pathao
+} from "@/types/pathao.js";
 
-import { RedxCreateOrder } from "./types/redx.js"; // import type of redx
+import { RedxCreateOrder } from "@/types/redx.js";
 
-import { Config } from "./types/config.js"; // import type of config
+import { Config } from "@/types/config.js";
 
-import { Steadfast } from "./controllers/steadfast/index.js"; // updated
-import { Pathao } from "./controllers/pathao/index.js"; // updated
-import { Redx } from "./controllers/redx/index.js"; // updated
+import { Steadfast } from "@/controllers/steadfast/index.js";
+import { Pathao } from "@/controllers/pathao/index.js";
+import { Redx } from "@/controllers/redx/index.js";
+import {
+  SteadfastWebhookHandler,
+  PathaoWebhookHandler,
+  RedXWebhookHandler,
+} from "@/controllers/webhooks/index.js";
+
+export {
+  SteadfastWebhookHandler,
+  PathaoWebhookHandler,
+  RedXWebhookHandler,
+} from "@/controllers/webhooks/index.js";
+
+export type {
+  SteadfastWebhookPayload,
+  SteadfastDeliveryStatusWebhook,
+  SteadfastTrackingUpdateWebhook,
+  PathaoWebhookPayload,
+  PathaoWebhookEvent,
+  PathaoWebhookBase,
+  RedXWebhookPayload,
+  RedXWebhookStatus,
+  RedXDeliveryType,
+  WebhookVerifyResult,
+  WebhookParseResult,
+} from "@/types/webhook.js";
 class RouteXpress {
   private config: Config;
   private pathao?: Pathao;
   private steadfast?: Steadfast;
   private redx?: Redx;
+  private steadfastWebhook?: SteadfastWebhookHandler;
+  private pathaoWebhook?: PathaoWebhookHandler;
+  private redxWebhook?: RedXWebhookHandler;
 
   constructor(config: Config) {
     if (!config) {
@@ -40,6 +68,25 @@ class RouteXpress {
 
     if (config.redx) {
       this.redx = new Redx(config.redx, config.redx.environment);
+    }
+
+    // Initialize webhook handlers if configured
+    if (config.webhooks?.steadfast?.enabled && config.webhooks.steadfast.apiSecret) {
+      this.steadfastWebhook = new SteadfastWebhookHandler(
+        config.webhooks.steadfast.apiSecret,
+      );
+    }
+
+    if (config.webhooks?.pathao?.enabled && config.webhooks.pathao.integrationSecret) {
+      this.pathaoWebhook = new PathaoWebhookHandler(
+        config.webhooks.pathao.integrationSecret,
+      );
+    }
+
+    if (config.webhooks?.redx?.enabled && config.webhooks.redx.apiAccessToken) {
+      this.redxWebhook = new RedXWebhookHandler(
+        config.webhooks.redx.apiAccessToken,
+      );
     }
 
     // Ensure at least one service is configured
@@ -87,11 +134,116 @@ class RouteXpress {
   }
 
   /**
+   * Safely access the Steadfast webhook handler.
+   *
+   * @returns The Steadfast webhook handler.
+   * @throws If Steadfast webhooks are not configured.
+   *
+   * @example
+   * ```ts
+   * const handler = rx.getSteadfastWebhook();
+   * const result = handler.handle(requestBody, requestHeaders);
+   * if (result.success) {
+   *   console.log(result.data);
+   * }
+   * ```
+   */
+  getSteadfastWebhook(): SteadfastWebhookHandler {
+    if (!this.steadfastWebhook) {
+      throw new Error("Steadfast webhook is not configured");
+    }
+    return this.steadfastWebhook;
+  }
+
+  /**
+   * Safely access the Pathao webhook handler.
+   *
+   * @returns The Pathao webhook handler.
+   * @throws If Pathao webhooks are not configured.
+   *
+   * @example
+   * ```ts
+   * const handler = rx.getPathaoWebhook();
+   * // Verify via integration secret header
+   * const result = handler.handle(requestBody, requestHeaders);
+   * // Or verify via HMAC-SHA256 signature
+   * const result = handler.handleWithSignature(requestBody, requestHeaders);
+   * ```
+   */
+  getPathaoWebhook(): PathaoWebhookHandler {
+    if (!this.pathaoWebhook) {
+      throw new Error("Pathao webhook is not configured");
+    }
+    return this.pathaoWebhook;
+  }
+
+  /**
+   * Safely access the RedX webhook handler.
+   *
+   * @returns The RedX webhook handler.
+   * @throws If RedX webhooks are not configured.
+   *
+   * @example
+   * ```ts
+   * const handler = rx.getRedXWebhook();
+   * const result = handler.handle(requestBody, requestHeaders);
+   * if (result.success) {
+   *   console.log(result.data);
+   * }
+   * ```
+   */
+  protected getRedXWebhook(): RedXWebhookHandler {
+    if (!this.redxWebhook) {
+      throw new Error("RedX webhook is not configured");
+    }
+    return this.redxWebhook;
+  }
+
+  /**
+   * Get the configured webhook URL for a provider.
+   *
+   * @param provider - The delivery service provider.
+   * @returns The webhook URL.
+   * @throws If webhooks are not configured for the provider.
+   *
+   * @example
+   * ```ts
+   * const url = rx.getWebhookUrl("steadfast");
+   * //=> "https://your-server.com/api/webhooks/steadfast"
+   *
+   * // Register this URL with the courier's dashboard or API
+   * ```
+   */
+  getWebhookUrl(provider: "steadfast" | "pathao" | "redx"): string {
+    const url = this.config.webhooks?.[provider]?.webhookUrl;
+    if (!url) {
+      throw new Error(`Webhook URL is not configured for ${provider}`);
+    }
+    return url;
+  }
+
+  /**
    * Create an order for a specified provider.
-   * @param {"steadfast" | "pathao" | "redx"} provider - The delivery service provider.
-   * @param {Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder} orderData - The order data.
-   * @returns {Promise<any>} The response from the provider.
-   * @throws {Error} If the provider or order data is invalid.
+   *
+   * @param provider - "steadfast", "pathao", or "redx".
+   * @param orderData - The order data matching the provider's format.
+   * @returns The provider's order response.
+   *
+   * @example
+   * ```ts
+   * const rx = new RouteXpress({ steadfast: { apiKey: "...", apiSecret: "..." } });
+   *
+   * const result = await rx.createOrder("steadfast", {
+   *   order_details: {
+   *     invoice: "INV-001",
+   *     recipient_name: "John Doe",
+   *     recipient_phone: "01712345678",
+   *     recipient_address: "123 Main St, Dhaka",
+   *     cod_amount: 1500,
+   *   },
+   * });
+   * //=> { invoice: "INV-001", consignment_id: 12345, tracking_code: "SF123", ... }
+   * ```
    */
   async createOrder(
     provider: "steadfast" | "pathao" | "redx",
@@ -141,10 +293,33 @@ class RouteXpress {
 
   /**
    * Create a bulk order for a specified provider.
-   * @param {"steadfast" | "pathao"} provider - The delivery service provider.
-   * @param {Bulk_Order_For_Steadfast | Bulk_Order_For_Pathao} allOrder - The bulk order data.
-   * @returns {Promise<any>} The response from the provider.
-   * @throws {Error} If the provider or bulk order data is invalid.
+   *
+   * @param provider - "steadfast" or "pathao" (bulk not supported on RedX).
+   * @param allOrder - The bulk order payload matching the provider's format.
+   * @returns The provider's bulk order response.
+   *
+   * @example
+   * ```ts
+   * const result = await rx.createBulkOrder("steadfast", {
+   *   orders: [
+   *     {
+   *       invoice: "INV-BULK-001",
+   *       recipient_name: "Alice",
+   *       recipient_phone: "01711112222",
+   *       recipient_address: "456 Road, Chittagong",
+   *       cod_amount: 2500,
+   *     },
+   *     {
+   *       invoice: "INV-BULK-002",
+   *       recipient_name: "Bob",
+   *       recipient_phone: "01833334444",
+   *       recipient_address: "789 Ave, Sylhet",
+   *       cod_amount: 1800,
+   *     },
+   *   ],
+   * });
+   * //=> { success: true, data: [...] }
+   * ```
    */
   async createBulkOrder(
     provider: "steadfast" | "pathao",
@@ -186,13 +361,24 @@ class RouteXpress {
 
   /**
    * Get the status of an order by its consignment ID.
-   * @param {Object} orderData - The order data containing provider and consignment ID.
-   * @param {string} orderData.provider - The delivery service provider.
-   * @param {Object} orderData.data - The data containing consignment ID and optional auth token.
-   * @param {string} orderData.data.consignment_id - The consignment ID of the order.
-   * @param {string} [orderData.data.authToken] - The optional auth token for Pathao orders.
-   * @returns {Promise<any>} The status of the order.
-   * @throws {Error} If the order data is invalid.
+   *
+   * @param orderData - Object containing provider name and consignment ID.
+   * @returns The status response from the provider.
+   *
+   * @example
+   * ```ts
+   * // Steadfast
+   * const status = await rx.getOrderStatus({
+   *   provider: "steadfast",
+   *   data: { consignment_id: "12345" },
+   * });
+   *
+   * // Pathao (requires auth token)
+   * const status = await rx.getOrderStatus({
+   *   provider: "pathao",
+   *   data: { consignment_id: "PATHAO-67890", authToken: "eyJhbG..." },
+   * });
+   * ```
    */
   async getOrderStatus(orderData: {
     provider: string;
@@ -233,10 +419,16 @@ class RouteXpress {
   }
 
   /**
-   * Get the status of an order by its invoice number.
-   * @param {string} invoice - The invoice number of the order.
-   * @returns {Promise<any>} The status of the order.
-   * @throws {Error} If the invoice number is invalid.
+   * Get the status of a Steadfast order by its invoice number.
+   *
+   * @param invoice - The invoice number.
+   * @returns The status response.
+   *
+   * @example
+   * ```ts
+   * const result = await rx.statusByInvoice("INV-2024-001");
+   * //=> { current_status: "delivered", status_code: 1, ... }
+   * ```
    */
   async statusByInvoice(invoice: string) {
     try {
@@ -254,10 +446,16 @@ class RouteXpress {
   }
 
   /**
-   * Get the status of an order by its tracking code.
-   * @param {string} trackingcode - The tracking code of the order.
-   * @returns {Promise<any>} The status of the order.
-   * @throws {Error} If the tracking code is invalid.
+   * Get the status of a Steadfast order by its tracking code.
+   *
+   * @param trackingcode - The tracking code.
+   * @returns The status response.
+   *
+   * @example
+   * ```ts
+   * const result = await rx.statusBytrackingcode("SF-TRACK-001");
+   * //=> { current_status: "in_transit", status_code: 3, ... }
+   * ```
    */
   async statusBytrackingcode(trackingcode: string) {
     try {
@@ -276,8 +474,14 @@ class RouteXpress {
 
   /**
    * Get the balance of the Steadfast account.
-   * @returns {Promise<any>} The balance information.
-   * @throws {Error} If there is an error retrieving the balance.
+   *
+   * @returns The balance information.
+   *
+   * @example
+   * ```ts
+   * const balance = await rx.getSteadFastBalance();
+   * //=> { balance: 12500.50, currency: "BDT" }
+   * ```
    */
   async getSteadFastBalance() {
     try {
@@ -292,9 +496,18 @@ class RouteXpress {
 
   /**
    * Create a return request for a Steadfast consignment.
-   * @param {Create_Return_Request_Params} params - The return request parameters.
-   * @returns {Promise<any>} The created return request.
-   * @throws {Error} If there is an error creating the return request.
+   *
+   * @param params - Return request parameters.
+   * @returns The created return request.
+   *
+   * @example
+   * ```ts
+   * const result = await rx.createSteadfastReturnRequest({
+   *   consignment_id: 12345,
+   *   reason: "Customer refused delivery",
+   * });
+   * //=> { success: true, return_id: 987 }
+   * ```
    */
   async createSteadfastReturnRequest(params: Create_Return_Request_Params) {
     try {
@@ -309,9 +522,15 @@ class RouteXpress {
 
   /**
    * Get a single return request by ID from Steadfast.
-   * @param {number} id - The return request ID.
-   * @returns {Promise<any>} The return request details.
-   * @throws {Error} If there is an error retrieving the return request.
+   *
+   * @param id - The return request ID.
+   * @returns The return request details.
+   *
+   * @example
+   * ```ts
+   * const request = await rx.getSteadfastReturnRequest(987);
+   * //=> { id: 987, consignment_id: 12345, status: "pending", ... }
+   * ```
    */
   async getSteadfastReturnRequest(id: number) {
     try {
@@ -326,8 +545,14 @@ class RouteXpress {
 
   /**
    * Get all return requests from Steadfast.
-   * @returns {Promise<any>} The list of return requests.
-   * @throws {Error} If there is an error retrieving the return requests.
+   *
+   * @returns The list of return requests.
+   *
+   * @example
+   * ```ts
+   * const requests = await rx.getSteadfastReturnRequests();
+   * //=> { data: [{ id: 987, consignment_id: 12345, ... }, ...] }
+   * ```
    */
   async getSteadfastReturnRequests() {
     try {
@@ -342,8 +567,14 @@ class RouteXpress {
 
   /**
    * Get all payments from Steadfast.
-   * @returns {Promise<any>} The list of payments.
-   * @throws {Error} If there is an error retrieving the payments.
+   *
+   * @returns The list of payments.
+   *
+   * @example
+   * ```ts
+   * const payments = await rx.getSteadfastPayments();
+   * //=> { data: [{ payment_id: 1, amount: 12500, date: "2024-03-15" }, ...] }
+   * ```
    */
   async getSteadfastPayments() {
     try {
@@ -358,9 +589,15 @@ class RouteXpress {
 
   /**
    * Get a single payment with consignments from Steadfast.
-   * @param {number} paymentId - The payment ID.
-   * @returns {Promise<any>} The payment details with consignments.
-   * @throws {Error} If there is an error retrieving the payment.
+   *
+   * @param paymentId - The payment ID.
+   * @returns The payment details with consignments.
+   *
+   * @example
+   * ```ts
+   * const payment = await rx.getSteadfastSinglePayment(1);
+   * //=> { payment_id: 1, amount: 12500, consignments: [...] }
+   * ```
    */
   async getSteadfastSinglePayment(paymentId: number) {
     try {
@@ -375,8 +612,14 @@ class RouteXpress {
 
   /**
    * Get all police stations from Steadfast.
-   * @returns {Promise<any>} The list of police stations.
-   * @throws {Error} If there is an error retrieving the police stations.
+   *
+   * @returns The list of police stations (used for area lookups).
+   *
+   * @example
+   * ```ts
+   * const stations = await rx.getSteadfastPoliceStations();
+   * //=> { data: [{ id: 1, name: "Dhanmondi PS", district: "Dhaka" }, ...] }
+   * ```
    */
   async getSteadfastPoliceStations() {
     try {
@@ -391,9 +634,24 @@ class RouteXpress {
 
   //add pathao methods here
   /**
-   * Create a new token for Pathao.
-   * @returns {Promise<any>} The response containing the new token.
-   * @throws {Error} If there is an error creating the token.
+   * Create a new Pathao auth token using stored credentials.
+   *
+   * @returns The new token response.
+   *
+   * @example
+   * ```ts
+   * const rx = new RouteXpress({
+   *   pathao: {
+   *     baseUrl: "https://merchant-api-paths.pathao.com",
+   *     clientId: "YOUR_CLIENT_ID",
+   *     clientSecret: "YOUR_CLIENT_SECRET",
+   *     username: "user@example.com",
+   *     password: "your_password",
+   *   },
+   * });
+   *
+   * const { access_token } = await rx.createPathaoToken();
+   * ```
    */
   async createPathaoToken() {
     try {
@@ -408,9 +666,15 @@ class RouteXpress {
 
   /**
    * Create a refresh token for Pathao.
-   * @param {string} refreshToken - The refresh token.
-   * @returns {Promise<any>} The response containing the new refresh token.
-   * @throws {Error} If there is an error creating the refresh token.
+   *
+   * @param refreshToken - The current refresh token.
+   * @returns The new token set.
+   *
+   * @example
+   * ```ts
+   * const tokens = await rx.createPathaoRefreshToken("old_refresh_token_here");
+   * //=> { access_token: "...", refresh_token: "...", expires_in: 3600 }
+   * ```
    */
   async createPathaoRefreshToken(refreshToken: string) {
     try {
@@ -425,10 +689,24 @@ class RouteXpress {
 
   /**
    * Create a new store in Pathao.
-   * @param {string} authToken - The auth token for Pathao.
-   * @param {PathaoStore} storeData - The data for the new store.
-   * @returns {Promise<any>} The response containing the created store information.
-   * @throws {Error} If there is an error creating the store.
+   *
+   * @param authToken - The Pathao auth token.
+   * @param storeData - The store details.
+   * @returns The created store information.
+   *
+   * @example
+   * ```ts
+   * const store = await rx.createPathaoStore("eyJhbG...", {
+   *   name: "My Shop",
+   *   contact_name: "John Doe",
+   *   contact_phone: "01712345678",
+   *   address: "123 Road, Dhaka",
+   *   instruction: "Ring doorbell on arrival",
+   *   area_id: 1,
+   *   default_pickup_phone: "01712345678",
+   * });
+   * //=> { store_id: 42, name: "My Shop", ... }
+   * ```
    */
   async createPathaoStore(authToken: string, storeData: PathaoStore) {
     try {
@@ -443,9 +721,15 @@ class RouteXpress {
 
   /**
    * Get the list of cities for Pathao.
-   * @param {string} authToken - The auth token for Pathao.
-   * @returns {Promise<any>} The list of cities.
-   * @throws {Error} If there is an error retrieving the cities.
+   *
+   * @param authToken - The Pathao auth token.
+   * @returns The list of cities.
+   *
+   * @example
+   * ```ts
+   * const cities = await rx.getPathaoCity("eyJhbG...");
+   * //=> { data: [{ city_id: 1, city_name: "Dhaka" }, { city_id: 2, city_name: "Chittagong" }, ...] }
+   * ```
    */
   async getPathaoCity(authToken: string) {
     try {
@@ -460,10 +744,16 @@ class RouteXpress {
 
   /**
    * Get the list of zones in a city for Pathao.
-   * @param {string} authToken - The auth token for Pathao.
-   * @param {number} cityId - The ID of the city.
-   * @returns {Promise<any>} The list of zones in the city.
-   * @throws {Error} If there is an error retrieving the zones.
+   *
+   * @param authToken - The Pathao auth token.
+   * @param cityId - The city ID.
+   * @returns The list of zones.
+   *
+   * @example
+   * ```ts
+   * const zones = await rx.getPathaoZone("eyJhbG...", 1);
+   * //=> { data: [{ zone_id: 10, zone_name: "Dhanmondi" }, ...] }
+   * ```
    */
   async getPathaoZone(authToken: string, cityId: number) {
     try {
@@ -478,10 +768,16 @@ class RouteXpress {
 
   /**
    * Get the list of areas in a zone for Pathao.
-   * @param {string} authToken - The auth token for Pathao.
-   * @param {number} zoneId - The ID of the zone.
-   * @returns {Promise<any>} The list of areas in the zone.
-   * @throws {Error} If there is an error retrieving the areas.
+   *
+   * @param authToken - The Pathao auth token.
+   * @param zoneId - The zone ID.
+   * @returns The list of areas.
+   *
+   * @example
+   * ```ts
+   * const areas = await rx.getPathaoArea("eyJhbG...", 10);
+   * //=> { data: [{ area_id: 100, area_name: "Dhanmondi 15" }, ...] }
+   * ```
    */
   async getPathaoArea(authToken: string, zoneId: number) {
     try {
@@ -495,11 +791,23 @@ class RouteXpress {
   }
 
   /**
-   * Get the price plan for an order in Pathao.
-   * @param {string} authToken - The auth token for Pathao.
-   * @param {any} orderData - The order data.
-   * @returns {Promise<any>} The price plan information.
-   * @throws {Error} If there is an error retrieving the price plan.
+   * Get the price plan for a Pathao order.
+   *
+   * @param authToken - The Pathao auth token.
+   * @param orderData - Order details for pricing (delivery_type, area_id, weight, etc.).
+   * @returns The price plan information.
+   *
+   * @example
+   * ```ts
+   * const price = await rx.price_plane("eyJhbG...", {
+   *   delivery_type: 48,
+   *   area_id: 10,
+   *   merchant_id: 5,
+   *   weight: 500,
+   *   amount_to_collect: 1500,
+   * });
+   * //=> { delivery_fee: 80, cod_fee: 20, total_fee: 100 }
+   * ```
    */
   async price_plane(authToken: string, orderData: any) {
     try {
@@ -514,9 +822,15 @@ class RouteXpress {
 
   /**
    * Get all stores for a Pathao account.
-   * @param {string} authToken - The auth token for Pathao.
-   * @returns {Promise<any>} The list of all stores.
-   * @throws {Error} If there is an error retrieving the stores.
+   *
+   * @param authToken - The Pathao auth token.
+   * @returns The list of stores.
+   *
+   * @example
+   * ```ts
+   * const stores = await rx.getAllPathaoStore("eyJhbG...");
+   * //=> { data: [{ store_id: 42, name: "My Shop", ... }, ...] }
+   * ```
    */
   async getAllPathaoStore(authToken: string) {
     try {
@@ -530,14 +844,21 @@ class RouteXpress {
   }
 
   /**
-   * Create a new store in Redx.
-   * @param {Object} storeData - The data for the new store.
-   * @param {string} storeData.name - The name of the store.
-   * @param {string} storeData.phone - The phone number of the store.
-   * @param {string} storeData.address - The address of the store.
-   * @param {string} storeData.area_id - The area ID where the store is located.
-   * @returns {Promise<any>} The response containing the created store information.
-   * @throws {Error} If there is an error creating the store.
+   * Create a new store in RedX.
+   *
+   * @param storeData - Store details.
+   * @returns The created store information.
+   *
+   * @example
+   * ```ts
+   * const store = await rx.createRedXStore({
+   *   name: "My RedX Shop",
+   *   phone: "01712345678",
+   *   address: "123 Road, Dhaka",
+   *   area_id: "1234",
+   * });
+   * //=> { store_id: "redx_store_001", name: "My RedX Shop", ... }
+   * ```
    */
   async createRedXStore(storeData: {
     name: string;
@@ -556,10 +877,16 @@ class RouteXpress {
   }
 
   /**
-   * Track a parcel by its tracking code in Redx.
-   * @param {string} trackingcode - The tracking code of the parcel.
-   * @returns {Promise<any>} The tracking information of the parcel.
-   * @throws {Error} If the tracking code is invalid.
+   * Track a parcel by its tracking code in RedX.
+   *
+   * @param trackingcode - The RedX tracking code.
+   * @returns The tracking information.
+   *
+   * @example
+   * ```ts
+   * const tracking = await rx.trackParcelByTrackingCode("RT-TRACK-001");
+   * //=> { current_status: "in_transit", status_history: [...], ... }
+   * ```
    */
   async trackParcelByTrackingCode(trackingcode: string) {
     try {
@@ -577,10 +904,16 @@ class RouteXpress {
   }
 
   /**
-   * Get parcel information by its tracking code in Redx.
-   * @param {string} trackingcode - The tracking code of the parcel.
-   * @returns {Promise<any>} The parcel information.
-   * @throws {Error} If the tracking code is invalid.
+   * Get parcel information by its tracking code in RedX.
+   *
+   * @param trackingcode - The RedX tracking code.
+   * @returns The parcel information.
+   *
+   * @example
+   * ```ts
+   * const info = await rx.getParcelInfoByTrackingCode("RT-TRACK-001");
+   * //=> { tracking_code: "RT-TRACK-001", status: "pending", ... }
+   * ```
    */
   async getParcelInfoByTrackingCode(trackingcode: string) {
     try {
@@ -598,11 +931,20 @@ class RouteXpress {
   }
 
   /**
-   * Update parcel information in Redx.
-   * @param {string} trackingcode - The tracking code of the parcel.
-   * @param {Object} data - The data to update.
-   * @returns {Promise<any>} The response from Redx.
-   * @throws {Error} If there is an error updating the parcel.
+   * Update parcel information in RedX.
+   *
+   * @param trackingcode - The RedX tracking code.
+   * @param data - Fields to update (e.g. `{ delivery_date: "2024-04-01" }`).
+   * @returns The update response.
+   *
+   * @example
+   * ```ts
+   * const result = await rx.updateParcel("RT-TRACK-001", {
+   *   delivery_date: "2024-04-01",
+   *   note: "Customer requested delay",
+   * });
+   * //=> { success: true }
+   * ```
    */
   async updateParcel(trackingcode: string, data: object) {
     try {
@@ -616,9 +958,15 @@ class RouteXpress {
   }
 
   /**
-   * Get the list of areas for Redx.
-   * @returns {Promise<any>} The list of areas.
-   * @throws {Error} If there is an error retrieving the areas.
+   * Get the list of areas for RedX.
+   *
+   * @returns The list of areas.
+   *
+   * @example
+   * ```ts
+   * const areas = await rx.getRedXAreaList();
+   * //=> { data: [{ area_id: "1234", area_name: "Dhanmondi" }, ...] }
+   * ```
    */
   async getRedXAreaList() {
     try {
@@ -632,10 +980,16 @@ class RouteXpress {
   }
 
   /**
-   * Get area information by postcode in Redx.
-   * @param {string} postcode - The postcode to lookup.
-   * @returns {Promise<any>} The area information.
-   * @throws {Error} If there is an error retrieving the area.
+   * Get area information by postcode in RedX.
+   *
+   * @param postcode - The postcode to lookup.
+   * @returns The area information.
+   *
+   * @example
+   * ```ts
+   * const area = await rx.getResXAreabyPostcode("1207");
+   * //=> { area_id: "1234", area_name: "Dhanmondi", ... }
+   * ```
    */
   async getResXAreabyPostcode(postcode: string) {
     try {
@@ -649,10 +1003,16 @@ class RouteXpress {
   }
 
   /**
-   * Get area information by district name in Redx.
-   * @param {string} district_name - The district name to lookup.
-   * @returns {Promise<any>} The area information.
-   * @throws {Error} If there is an error retrieving the area.
+   * Get area information by district name in RedX.
+   *
+   * @param district_name - The district name to lookup.
+   * @returns The area information.
+   *
+   * @example
+   * ```ts
+   * const areas = await rx.getRedXAreaBYDistrict_name("Dhaka");
+   * //=> { data: [{ area_id: "1234", area_name: "Dhanmondi" }, ...] }
+   * ```
    */
   async getRedXAreaBYDistrict_name(district_name: string) {
     try {
@@ -666,9 +1026,15 @@ class RouteXpress {
   }
 
   /**
-   * Get the list of stores for Redx.
-   * @returns {Promise<any>} The list of stores.
-   * @throws {Error} If there is an error retrieving the stores.
+   * Get the list of stores for RedX.
+   *
+   * @returns The list of stores.
+   *
+   * @example
+   * ```ts
+   * const stores = await rx.getRedXStores();
+   * //=> { data: [{ store_id: "redx_store_001", name: "My Shop", ... }, ...] }
+   * ```
    */
   async getRedXStores() {
     try {
@@ -682,10 +1048,16 @@ class RouteXpress {
   }
 
   /**
-   * Get pickup store information by store ID in Redx.
-   * @param {string} storeId - The ID of the store.
-   * @returns {Promise<any>} The pickup store information.
-   * @throws {Error} If there is an error retrieving the store information.
+   * Get pickup store information by store ID in RedX.
+   *
+   * @param storeId - The RedX store ID.
+   * @returns The pickup store information.
+   *
+   * @example
+   * ```ts
+   * const store = await rx.getPickupStoreInfo("redx_store_001");
+   * //=> { store_id: "redx_store_001", name: "My Shop", address: "...", ... }
+   * ```
    */
   async getPickupStoreInfo(storeId: string) {
     try {
@@ -699,14 +1071,21 @@ class RouteXpress {
   }
 
   /**
-   * Calculate the price for a Redx order.
-   * @param {Object} orderData - The order data for price calculation.
-   * @param {number} orderData.delivery_area_id - The delivery area ID.
-   * @param {number} orderData.pickup_area_id - The pickup area ID.
-   * @param {number} orderData.cash_collection_amount - The cash collection amount.
-   * @param {number} orderData.weight - The weight of the package.
-   * @returns {Promise<any>} The calculated price.
-   * @throws {Error} If any of the required fields are missing or if there is an error calculating the price.
+   * Calculate the delivery price for a RedX order.
+   *
+   * @param orderData - Order details for price calculation.
+   * @returns The calculated price breakdown.
+   *
+   * @example
+   * ```ts
+   * const price = await rx.calculateRedXPrice({
+   *   delivery_area_id: 1234,
+   *   pickup_area_id: 1234,
+   *   cash_collection_amount: 1500,
+   *   weight: 500,
+   * });
+   * //=> { delivery_fee: 80, cod_fee: 20, total_fee: 100 }
+   * ```
    */
   async calculateRedXPrice(orderData: {
     delivery_area_id: number;

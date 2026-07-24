@@ -29,7 +29,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "prepare": "npm run build",
     "test": "node --loader ts-node/esm test/main.ts",
     "start": "ts-node test/main.ts"
@@ -56,6 +56,7 @@
   "packageManager": "pnpm@10.7.1",
   "devDependencies": {
     "@types/node": "^22.15.17",
+    "tsc-alias": "^1.8.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },

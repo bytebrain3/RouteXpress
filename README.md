@@ -23,6 +23,7 @@ A Node.js library to unify and manage courier services in Bangladesh (Steadfast,
 - REDX store management, parcel tracking, and price calculation
 - Get Steadfast account balance
 - Price calculation for Pathao and REDX orders
+- **Webhook support** for all three providers with built-in verification
 
 ---
 
@@ -64,6 +65,42 @@ const client = new RouteXpress({
 ```
 
 > You can configure one, two, or all three providers. At least one must be configured.
+
+### Webhook Configuration (Optional)
+
+Each provider can have its own webhook endpoint. Add the `webhooks` config to enable them:
+
+```typescript
+const client = new RouteXpress({
+  steadfast: { apiKey: "...", apiSecret: "..." },
+  pathao: { apiKey: "...", apiSecret: "...", username: "...", password: "..." },
+  redx: { apiKey: "...", environment: "production" },
+
+  webhooks: {
+    steadfast: {
+      enabled: true,
+      webhookUrl: "https://your-server.com/api/webhooks/steadfast",
+      apiSecret: "YOUR_STEADFAST_WEBHOOK_SECRET",
+    },
+    pathao: {
+      enabled: true,
+      webhookUrl: "https://your-server.com/api/webhooks/pathao",
+      integrationSecret: "YOUR_PATHAO_INTEGRATION_SECRET",
+    },
+    redx: {
+      enabled: true,
+      webhookUrl: "https://your-server.com/api/webhooks/redx",
+      apiAccessToken: "YOUR_REDX_API_ACCESS_TOKEN",
+    },
+  },
+});
+```
+
+| Provider | Verification Method | Secret Field |
+|---|---|---|
+| Steadfast | `Authorization: Bearer <apiSecret>` header | `apiSecret` |
+| Pathao | `X-Pathao-Merchant-Webhook-Integration-Secret` header + optional HMAC-SHA256 `X-PATHAO-Signature` | `integrationSecret` |
+| RedX | `API-ACCESS-TOKEN` header | `apiAccessToken` |
 
 ---
 
@@ -452,6 +489,148 @@ const response = await client.calculateRedXPrice({
   weight: 2,
 });
 console.log("Response:", response);
+```
+
+---
+
+## Webhooks
+
+RouteXpress provides built-in webhook handlers for each provider. Use them in your route handlers to verify and parse incoming webhooks.
+
+### Steadfast Webhooks
+
+```typescript
+// Express example
+app.post("/api/webhooks/steadfast", (req, res) => {
+  const handler = client.getSteadfastWebhook();
+
+  // Verify + parse in one step
+  const result = handler.handle(req.body, req.headers);
+
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  const webhook = result.data;
+
+  // Handle delivery status updates
+  if (webhook.notification_type === "delivery_status") {
+    console.log(`Order ${webhook.consignment_id}: ${webhook.current_status}`);
+  }
+
+  // Handle tracking updates
+  if (webhook.notification_type === "tracking_update") {
+    console.log(`Tracking update for ${webhook.consignment_id}`);
+  }
+
+  res.json({ received: true });
+});
+```
+
+### Pathao Webhooks
+
+```typescript
+// Express example — integration secret verification
+app.post("/api/webhooks/pathao", (req, res) => {
+  const handler = client.getPathaoWebhook();
+
+  // Verify via X-Pathao-Merchant-Webhook-Integration-Secret header
+  const result = handler.handle(req.body, req.headers);
+
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  console.log("Pathao event:", result.data.event);
+  console.log("Consignment:", result.data.consignment_id);
+
+  res.json({ received: true });
+});
+
+// Or verify via HMAC-SHA256 signature (X-PATHAO-Signature header)
+app.post("/api/webhooks/pathao/signature", (req, res) => {
+  const handler = client.getPathaoWebhook();
+
+  const result = handler.handleWithSignature(req.body, req.headers);
+
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  console.log("Pathao event:", result.data.event);
+  res.json({ received: true });
+});
+```
+
+### RedX Webhooks
+
+```typescript
+// Express example
+app.post("/api/webhooks/redx", (req, res) => {
+  const handler = client.getRedXWebhook();
+
+  // Verify via API-ACCESS-TOKEN header
+  const result = handler.handle(req.body, req.headers);
+
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  const webhook = result.data;
+
+  console.log(`Parcel ${webhook.tracking_number}: ${webhook.status}`);
+
+  res.json({ received: true });
+});
+```
+
+### Getting the Webhook URL
+
+Use `getWebhookUrl()` to retrieve the URL you registered with each provider:
+
+```typescript
+const steadfastUrl = client.getWebhookUrl("steadfast");
+//=> "https://your-server.com/api/webhooks/steadfast"
+
+const pathaoUrl = client.getWebhookUrl("pathao");
+//=> "https://your-server.com/api/webhooks/pathao"
+
+const redxUrl = client.getWebhookUrl("redx");
+//=> "https://your-server.com/api/webhooks/redx"
+```
+
+### Webhook Verification Summary
+
+| Provider | Header | Method |
+|---|---|---|
+| Steadfast | `Authorization: Bearer <apiSecret>` | `handler.handle(body, headers)` |
+| Pathao (secret) | `X-Pathao-Merchant-Webhook-Integration-Secret` | `handler.handle(body, headers)` |
+| Pathao (signature) | `X-PATHAO-Signature` (HMAC-SHA256) | `handler.handleWithSignature(body, headers)` |
+| RedX | `API-ACCESS-TOKEN` | `handler.handle(body, headers)` |
+
+---
+
+## Exports
+
+```typescript
+// Default export — the main client class
+import RouteXpress from "routexpress-bd";
+
+// Named exports — webhook handlers
+import {
+  SteadfastWebhookHandler,
+  PathaoWebhookHandler,
+  RedXWebhookHandler,
+} from "routexpress-bd";
+
+// Named exports — types
+import type {
+  SteadfastWebhookPayload,
+  PathaoWebhookPayload,
+  RedXWebhookPayload,
+  WebhookVerifyResult,
+  WebhookParseResult,
+} from "routexpress-bd";
 ```
 
 ---
