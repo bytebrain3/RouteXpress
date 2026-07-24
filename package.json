@@ -1,26 +1,70 @@
 {
   "name": "routexpress-bd",
-  "version": "0.1",
-  "description": "A TypeScript/JavaScript library for integrating Steadfast Pathao REDX delivery services",
+  "version": "0.1.0",
+  "description": "A TypeScript/JavaScript library for integrating Steadfast Pathao REDX delivery services in Bangladesh",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
     },
-    "./controllers/steadfast/index": {
-      "import": "./dist/controllers/steadfast/index.js",
-      "require": "./dist/controllers/steadfast/index.js"
+    "./controllers/steadfast": {
+      "import": {
+        "types": "./dist/controllers/steadfast/index.d.ts",
+        "default": "./dist/controllers/steadfast/index.js"
+      },
+      "require": {
+        "types": "./dist/controllers/steadfast/index.d.ts",
+        "default": "./dist/controllers/steadfast/index.js"
+      }
     },
-    "./controllers/pathao/index": {
-      "import": "./dist/controllers/pathao/index.js",
-      "require": "./dist/controllers/pathao/index.js"
+    "./controllers/pathao": {
+      "import": {
+        "types": "./dist/controllers/pathao/index.d.ts",
+        "default": "./dist/controllers/pathao/index.js"
+      },
+      "require": {
+        "types": "./dist/controllers/pathao/index.d.ts",
+        "default": "./dist/controllers/pathao/index.js"
+      }
     },
-    "./controllers/redx/index": {
-      "import": "./dist/controllers/redx/index.js",
-      "require": "./dist/controllers/redx/index.js"
+    "./controllers/redx": {
+      "import": {
+        "types": "./dist/controllers/redx/index.d.ts",
+        "default": "./dist/controllers/redx/index.js"
+      },
+      "require": {
+        "types": "./dist/controllers/redx/index.d.ts",
+        "default": "./dist/controllers/redx/index.js"
+      }
+    },
+    "./controllers/webhooks": {
+      "import": {
+        "types": "./dist/controllers/webhooks/index.d.ts",
+        "default": "./dist/controllers/webhooks/index.js"
+      },
+      "require": {
+        "types": "./dist/controllers/webhooks/index.d.ts",
+        "default": "./dist/controllers/webhooks/index.js"
+      }
+    },
+    "./types/*": {
+      "import": {
+        "types": "./dist/types/*.d.ts",
+        "default": "./dist/types/*.js"
+      },
+      "require": {
+        "types": "./dist/types/*.d.ts",
+        "default": "./dist/types/*.js"
+      }
     }
   },
   "files": [
@@ -30,7 +74,7 @@
   ],
   "scripts": {
     "build": "tsc && tsc-alias",
-    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
     "test": "node --loader ts-node/esm test/main.ts",
     "start": "ts-node test/main.ts"
   },
@@ -45,7 +89,9 @@
     "logistics-api",
     "logistics-management",
     "logistics",
-    "bangladesh"
+    "bangladesh",
+    "courier",
+    "webhook"
   ],
   "author": "Dip",
   "license": "MIT",
@@ -62,19 +108,5 @@
   },
   "peerDependencies": {
     "typescript": ">=4.0.0"
-  },
-  "compilerOptions": {
-    "outDir": "dist",
-    "declaration": true,
-    "declarationDir": "dist",
-    "module": "commonjs",
-    "target": "es2019",
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "strict": true,
-    "skipLibCheck": true
-  },
-  "include": [
-    "src/**/*"
-  ]
+  }
 }

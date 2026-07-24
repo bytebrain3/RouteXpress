@@ -8,6 +8,7 @@ import { Redx } from "./controllers/redx/index.js";
 import { SteadfastWebhookHandler, PathaoWebhookHandler, RedXWebhookHandler } from "./controllers/webhooks/index.js";
 export { SteadfastWebhookHandler, PathaoWebhookHandler, RedXWebhookHandler, } from "./controllers/webhooks/index.js";
 export type { SteadfastWebhookPayload, SteadfastDeliveryStatusWebhook, SteadfastTrackingUpdateWebhook, PathaoWebhookPayload, PathaoWebhookEvent, PathaoWebhookBase, RedXWebhookPayload, RedXWebhookStatus, RedXDeliveryType, WebhookVerifyResult, WebhookParseResult, } from "./types/webhook.js";
+export type { Config, Steadfast_Config, Pathao_Config, Redx_Config, SteadfastWebhookConfig, PathaoWebhookConfig, RedXWebhookConfig, } from "./types/config.js";
 declare class RouteXpress {
     private config;
     private pathao?;
@@ -50,7 +51,7 @@ declare class RouteXpress {
      * }
      * ```
      */
-    protected getSteadfastWebhook(): SteadfastWebhookHandler;
+    getSteadfastWebhook(): SteadfastWebhookHandler;
     /**
      * Safely access the Pathao webhook handler.
      *
@@ -66,7 +67,7 @@ declare class RouteXpress {
      * const result = handler.handleWithSignature(requestBody, requestHeaders);
      * ```
      */
-    protected getPathaoWebhook(): PathaoWebhookHandler;
+    getPathaoWebhook(): PathaoWebhookHandler;
     /**
      * Safely access the RedX webhook handler.
      *
@@ -82,7 +83,7 @@ declare class RouteXpress {
      * }
      * ```
      */
-    protected getRedXWebhook(): RedXWebhookHandler;
+    getRedXWebhook(): RedXWebhookHandler;
     /**
      * Get the configured webhook URL for a provider.
      *
