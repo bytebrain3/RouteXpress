@@ -44,7 +44,11 @@ pnpm add routexpress-bd
 ### Import and Initialize
 
 ```typescript
+// Default import
 import RouteXpress from "routexpress-bd";
+
+// Or named import
+import { RouteXpress } from "routexpress-bd";
 
 const client = new RouteXpress({
   steadfast: {
@@ -613,23 +617,47 @@ const redxUrl = client.getWebhookUrl("redx");
 ## Exports
 
 ```typescript
-// Default export — the main client class
+// Default export
 import RouteXpress from "routexpress-bd";
 
-// Named exports — webhook handlers
+// Named export — same class
+import { RouteXpress } from "routexpress-bd";
+
+// Webhook handlers
 import {
   SteadfastWebhookHandler,
   PathaoWebhookHandler,
   RedXWebhookHandler,
 } from "routexpress-bd";
 
-// Named exports — types
+// Webhook types
 import type {
+  // Steadfast
   SteadfastWebhookPayload,
+  SteadfastDeliveryStatusWebhook,
+  SteadfastTrackingUpdateWebhook,
+  // Pathao
   PathaoWebhookPayload,
+  PathaoWebhookEvent,
+  PathaoWebhookBase,
+  // RedX
   RedXWebhookPayload,
+  RedXWebhookStatus,
+  RedXDeliveryType,
+  // Common
   WebhookVerifyResult,
   WebhookParseResult,
+} from "routexpress-bd";
+
+// Config types
+import type {
+  Config,
+  Steadfast_Config,
+  Pathao_Config,
+  Redx_Config,
+  SteadfastWebhookConfig,
+  PathaoWebhookConfig,
+  RedXWebhookConfig,
 } from "routexpress-bd";
 ```
 

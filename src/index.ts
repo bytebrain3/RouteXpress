@@ -41,6 +41,16 @@ export type {
   WebhookVerifyResult,
   WebhookParseResult,
 } from "@/types/webhook.js";
+
+export type {
+  Config,
+  Steadfast_Config,
+  Pathao_Config,
+  Redx_Config,
+  SteadfastWebhookConfig,
+  PathaoWebhookConfig,
+  RedXWebhookConfig,
+} from "@/types/config.js";
 class RouteXpress {
   private config: Config;
   private pathao?: Pathao;
@@ -192,7 +202,7 @@ class RouteXpress {
    * }
    * ```
    */
-  protected getRedXWebhook(): RedXWebhookHandler {
+  getRedXWebhook(): RedXWebhookHandler {
     if (!this.redxWebhook) {
       throw new Error("RedX webhook is not configured");
     }
