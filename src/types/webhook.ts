@@ -557,6 +557,56 @@ export interface CarrybeeWebhookPayload {
   invoice_id?: string;
 }
 
+// ==================== Paperfly Webhook Types ====================
+
+export type PaperflyWebhookEvent =
+  | "parcel.created"
+  | "parcel.invoiced"
+  | "parcel.cancelled"
+  | "parcel.picked_up"
+  | "parcel.in_transit"
+  | "parcel.received_at_point"
+  | "parcel.assigned_for_delivery"
+  | "parcel.delivered"
+  | "parcel.partial"
+  | "parcel.exchange"
+  | "parcel.on_hold"
+  | "parcel.return"
+  | "parcel.return_transit"
+  | "parcel.return_to_merchant";
+
+export interface PaperflyWebhookRecipient {
+  name: string;
+  phone: string;
+  address: string;
+}
+
+export interface PaperflyWebhookPayload {
+  event: PaperflyWebhookEvent;
+  timestamp: string;
+  data: {
+    order_number: string;
+    merchant_order_reference: string;
+    barcode?: string;
+    package_price?: number;
+    recipient?: PaperflyWebhookRecipient;
+    special_instruction?: string;
+    status?: string;
+    journey?: string;
+    journey_type?: string;
+    hub_code?: string;
+    action_datetime?: string;
+    action_date_time?: string;
+    collected_amount?: number;
+    receiver_phone_number?: string | null;
+    Delivery_Officer_Phone?: string;
+    hold_reason?: string;
+    return_reason?: string;
+    return_invoice_number?: string;
+    return_challan_file?: string;
+  };
+}
+
 // ==================== Common Webhook Types ====================
 
 /**

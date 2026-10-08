@@ -11,6 +11,8 @@ import {
 
 import { RedxCreateOrder } from "@/types/redx.js";
 import { CarrybeeCreateOrder } from "@/types/carrybee.js";
+import { PaperflyCreateOrder } from "@/types/paperfly.js";
+import { EcourierCreateOrder } from "@/types/ecourier.js";
 
 import { Config } from "@/types/config.js";
 
@@ -18,11 +20,14 @@ import { Steadfast } from "@/controllers/steadfast/index.js";
 import { Pathao } from "@/controllers/pathao/index.js";
 import { Redx } from "@/controllers/redx/index.js";
 import { Carrybee } from "@/controllers/carrybee/index.js";
+import { Paperfly } from "@/controllers/paperfly/index.js";
+import { Ecourier } from "@/controllers/ecourier/index.js";
 import {
   SteadfastWebhookHandler,
   PathaoWebhookHandler,
   RedXWebhookHandler,
   CarrybeeWebhookHandler,
+  PaperflyWebhookHandler,
 } from "@/controllers/webhooks/index.js";
 
 export {
@@ -30,6 +35,7 @@ export {
   PathaoWebhookHandler,
   RedXWebhookHandler,
   CarrybeeWebhookHandler,
+  PaperflyWebhookHandler,
 } from "@/controllers/webhooks/index.js";
 
 export type {
@@ -44,6 +50,8 @@ export type {
   RedXDeliveryType,
   CarrybeeWebhookPayload,
   CarrybeeWebhookEvent,
+  PaperflyWebhookPayload,
+  PaperflyWebhookEvent,
   WebhookVerifyResult,
   WebhookParseResult,
 } from "@/types/webhook.js";
@@ -54,10 +62,13 @@ export type {
   Pathao_Config,
   Redx_Config,
   Carrybee_Config,
+  Paperfly_Config,
+  Ecourier_Config,
   SteadfastWebhookConfig,
   PathaoWebhookConfig,
   RedXWebhookConfig,
   CarrybeeWebhookConfig,
+  PaperflyWebhookConfig,
 } from "@/types/config.js";
 class RouteXpress {
   private config: Config;
@@ -69,6 +80,9 @@ class RouteXpress {
   private pathaoWebhook?: PathaoWebhookHandler;
   private redxWebhook?: RedXWebhookHandler;
   private carrybeeWebhook?: CarrybeeWebhookHandler;
+  private paperflyWebhook?: PaperflyWebhookHandler;
+  private paperfly?: Paperfly;
+  private ecourier?: Ecourier;
 
   constructor(config: Config) {
     if (!config) {
@@ -92,6 +106,14 @@ class RouteXpress {
 
     if (config.carrybee) {
       this.carrybee = new Carrybee(config.carrybee);
+    }
+
+    if (config.paperfly) {
+      this.paperfly = new Paperfly(config.paperfly);
+    }
+
+    if (config.ecourier) {
+      this.ecourier = new Ecourier(config.ecourier);
     }
 
     // Initialize webhook handlers if configured
@@ -119,8 +141,14 @@ class RouteXpress {
       );
     }
 
+    if (config.webhooks?.paperfly?.enabled && config.webhooks.paperfly.webhookSecret) {
+      this.paperflyWebhook = new PaperflyWebhookHandler(
+        config.webhooks.paperfly.webhookSecret,
+      );
+    }
+
     // Ensure at least one service is configured
-    if (!this.steadfast && !this.pathao && !this.redx && !this.carrybee) {
+    if (!this.steadfast && !this.pathao && !this.redx && !this.carrybee && !this.paperfly && !this.ecourier) {
       throw new Error(
         "At least one delivery service provider must be configured",
       );
@@ -173,6 +201,20 @@ class RouteXpress {
       throw new Error("Carrybee service is not configured");
     }
     return this.carrybee;
+  }
+
+  protected getPaperfly(): Paperfly {
+    if (!this.paperfly) {
+      throw new Error("Paperfly service is not configured");
+    }
+    return this.paperfly;
+  }
+
+  protected getEcourier(): Ecourier {
+    if (!this.ecourier) {
+      throw new Error("Ecourier service is not configured");
+    }
+    return this.ecourier;
   }
 
   /**
@@ -263,6 +305,13 @@ class RouteXpress {
     return this.carrybeeWebhook;
   }
 
+  getPaperflyWebhook(): PaperflyWebhookHandler {
+    if (!this.paperflyWebhook) {
+      throw new Error("Paperfly webhook is not configured");
+    }
+    return this.paperflyWebhook;
+  }
+
   /**
    * Get the configured webhook URL for a provider.
    *
@@ -278,7 +327,7 @@ class RouteXpress {
    * // Register this URL with the courier's dashboard or API
    * ```
    */
-  getWebhookUrl(provider: "steadfast" | "pathao" | "redx" | "carrybee"): string {
+  getWebhookUrl(provider: "steadfast" | "pathao" | "redx" | "carrybee" | "paperfly"): string {
     const url = this.config.webhooks?.[provider]?.webhookUrl;
     if (!url) {
       throw new Error(`Webhook URL is not configured for ${provider}`);
@@ -310,8 +359,8 @@ class RouteXpress {
    * ```
    */
   async createOrder(
-    provider: "steadfast" | "pathao" | "redx" | "carrybee",
-    orderData: Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder | CarrybeeCreateOrder,
+    provider: "steadfast" | "pathao" | "redx" | "carrybee" | "paperfly" | "ecourier",
+    orderData: Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder | CarrybeeCreateOrder | PaperflyCreateOrder | EcourierCreateOrder,
   ) {
     try {
       if (!orderData || !provider) {
@@ -352,6 +401,22 @@ class RouteXpress {
           throw new Error("Order data is required for Carrybee orders");
         }
         return await this.getCarrybee().createOrder(carrybeeOrder);
+      }
+
+      if (normalizedProvider === "paperfly") {
+        const paperflyOrder = orderData as PaperflyCreateOrder;
+        if (!paperflyOrder) {
+          throw new Error("Order data is required for Paperfly orders");
+        }
+        return await this.getPaperfly().createOrder(paperflyOrder);
+      }
+
+      if (normalizedProvider === "ecourier") {
+        const ecourierOrder = orderData as EcourierCreateOrder;
+        if (!ecourierOrder) {
+          throw new Error("Order data is required for eCourier orders");
+        }
+        return await this.getEcourier().createOrder(ecourierOrder);
       }
 
       throw new Error(`Unsupported provider: ${provider}`);
@@ -1343,6 +1408,206 @@ class RouteXpress {
       throw new Error("An unknown error occurred");
     }
   }
+
+  async createPaperflyOrder(orderData: {
+    merchantOrderReference: string;
+    storeName: string;
+    productBrief: string;
+    packagePrice: string;
+    max_weight: string;
+    customerName: string;
+    customerAddress: string;
+    customerPhone: string;
+    orderType?: string;
+    exchangeDescription?: string;
+    exchangePrice?: string;
+    exchangeWeight?: string;
+  }) {
+    try {
+      return await this.getPaperfly().createOrder(orderData);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async trackPaperflyOrder(referenceNumber: string) {
+    try {
+      return await this.getPaperfly().trackOrder(referenceNumber);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async cancelPaperflyOrder(orderId: string) {
+    try {
+      return await this.getPaperfly().cancelOrder(orderId);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async createEcourierOrder(orderData: {
+    recipient_name: string;
+    recipient_mobile: string;
+    recipient_city: string;
+    recipient_thana: string;
+    recipient_area: string;
+    recipient_address: string;
+    package_code: string;
+    product_price: number;
+    payment_method: string;
+    recipient_zip: string;
+    parcel_type?: string;
+    requested_delivery_time?: string;
+    product_id?: string;
+    pick_address?: string;
+    pick_hub?: number;
+    comments?: string;
+    number_of_item?: number;
+    actual_product_price?: number;
+    special_instruction?: string;
+    pgwid?: string;
+    pgwtxn_id?: string;
+  }) {
+    try {
+      return await this.getEcourier().createOrder(orderData);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async trackEcourierOrder(productId?: string, ecr?: string) {
+    try {
+      return await this.getEcourier().trackOrder(productId, ecr);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async cancelEcourierOrder(tracking: string, comment: string) {
+    try {
+      return await this.getEcourier().cancelOrder(tracking, comment);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getEcourierPackages() {
+    try {
+      return await this.getEcourier().getPackages();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async ecourierFraudCheck(number: string) {
+    try {
+      return await this.getEcourier().fraudCheck(number);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getEcourierCities() {
+    try {
+      return await this.getEcourier().getCities();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getEcourierThanas(city: string) {
+    try {
+      return await this.getEcourier().getThanas(city);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getEcourierAreas(postcode: string) {
+    try {
+      return await this.getEcourier().getAreas(postcode);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getEcourierBranches() {
+    try {
+      return await this.getEcourier().getBranches();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getEcourierPaymentStatus(tracking: string) {
+    try {
+      return await this.getEcourier().getPaymentStatus(tracking);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async trackEcourierChild(productId?: string, ecr?: string) {
+    try {
+      return await this.getEcourier().trackChild(productId, ecr);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async cancelEcourierChildOrder(tracking: string, comment: string) {
+    try {
+      return await this.getEcourier().cancelChildOrder(tracking, comment);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
 }
 
 export default RouteXpress;
@@ -1359,4 +1624,6 @@ export {
 } from "@/validators/pathao.js";
 export { validateRedxOrder } from "@/validators/redx.js";
 export { validateCarrybeeOrder } from "@/validators/carrybee.js";
+export { validatePaperflyOrder } from "@/validators/paperfly.js";
+export { validateEcourierOrder } from "@/validators/ecourier.js";
 export type { ErrorResponse } from "@/utils/errors.js";

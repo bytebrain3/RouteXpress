@@ -40,7 +40,26 @@ interface Carrybee_Config {
   environment: "production" | "sandbox";
 }
 
+interface Paperfly_Config {
+  username: string;
+  password: string;
+  apiKey: string;
+}
+
+interface Ecourier_Config {
+  apiKey: string;
+  apiSecret: string;
+  userId: string;
+  environment: "production" | "sandbox";
+}
+
 interface CarrybeeWebhookConfig {
+  enabled: boolean;
+  webhookUrl: string;
+  webhookSecret: string;
+}
+
+interface PaperflyWebhookConfig {
   enabled: boolean;
   webhookUrl: string;
   webhookSecret: string;
@@ -51,11 +70,14 @@ interface Config {
   pathao?: Pathao_Config;
   redx?: Redx_Config;
   carrybee?: Carrybee_Config;
+  paperfly?: Paperfly_Config;
+  ecourier?: Ecourier_Config;
   webhooks?: {
     steadfast?: SteadfastWebhookConfig;
     pathao?: PathaoWebhookConfig;
     redx?: RedXWebhookConfig;
     carrybee?: CarrybeeWebhookConfig;
+    paperfly?: PaperflyWebhookConfig;
   };
 }
 
@@ -64,9 +86,12 @@ export {
   Steadfast_Config,
   Redx_Config,
   Carrybee_Config,
+  Paperfly_Config,
+  Ecourier_Config,
   SteadfastWebhookConfig,
   PathaoWebhookConfig,
   RedXWebhookConfig,
   CarrybeeWebhookConfig,
+  PaperflyWebhookConfig,
   Config,
 };
