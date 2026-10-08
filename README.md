@@ -1,6 +1,6 @@
 # RouteXpress-BD
 
-![RouteXpress Logo](/public/route.png)
+![RouteXpress Hero](/public/hero.png)
 
 ## NPM Stats & Info
 
