@@ -1,6 +1,6 @@
 # RouteXpress-BD
 
-![RouteXpress Hero](/public/hero.png)
+![RouteXpress Hero](/public/route.png)
 
 ## NPM Stats & Info
 
@@ -11,7 +11,7 @@
 
 A Node.js library to unify and manage courier services in Bangladesh (Steadfast, Pathao, REDX, CarryBee).
 
-> **v1.1.0** — Added CarryBee provider with full API support, webhooks, reverse pickup, exchanges, and address resolution.
+> **v1.1.1** — Added CarryBee provider with full API support, webhooks, reverse pickup, exchanges, and address resolution.
 
 ---
 
@@ -114,12 +114,12 @@ const client = new RouteXpress({
 });
 ```
 
-| Provider | Verification Method | Secret Field |
-|---|---|---|
-| Steadfast | `Authorization: Bearer <apiSecret>` header | `apiSecret` |
-| Pathao | `X-Pathao-Merchant-Webhook-Integration-Secret` header + optional HMAC-SHA256 `X-PATHAO-Signature` | `integrationSecret` |
-| RedX | `API-ACCESS-TOKEN` header | `apiAccessToken` |
-| CarryBee | `X-Carrybee-Webhook-Signature` header | `webhookSecret` |
+| Provider  | Verification Method                                                                               | Secret Field        |
+| --------- | ------------------------------------------------------------------------------------------------- | ------------------- |
+| Steadfast | `Authorization: Bearer <apiSecret>` header                                                        | `apiSecret`         |
+| Pathao    | `X-Pathao-Merchant-Webhook-Integration-Secret` header + optional HMAC-SHA256 `X-PATHAO-Signature` | `integrationSecret` |
+| RedX      | `API-ACCESS-TOKEN` header                                                                         | `apiAccessToken`    |
+| CarryBee  | `X-Carrybee-Webhook-Signature` header                                                             | `webhookSecret`     |
 
 ---
 
@@ -545,7 +545,10 @@ console.log("Response:", response);
 #### 3. Cancel Order
 
 ```typescript
-const response = await client.cancelCarrybeeOrder("F1008BB2A9R", "Customer requested cancellation");
+const response = await client.cancelCarrybeeOrder(
+  "F1008BB2A9R",
+  "Customer requested cancellation",
+);
 console.log("Response:", response);
 ```
 
@@ -602,7 +605,9 @@ console.log("Response:", response);
 #### 10. Get Address Details
 
 ```typescript
-const response = await client.getCarrybeeAddressDetails("House 5, Road 3, Banani, Dhaka");
+const response = await client.getCarrybeeAddressDetails(
+  "House 5, Road 3, Banani, Dhaka",
+);
 console.log("Response:", response);
 ```
 
@@ -771,13 +776,13 @@ const carrybeeUrl = client.getWebhookUrl("carrybee");
 
 ### Webhook Verification Summary
 
-| Provider | Header | Method |
-|---|---|---|
-| Steadfast | `Authorization: Bearer <apiSecret>` | `handler.handle(body, headers)` |
-| Pathao (secret) | `X-Pathao-Merchant-Webhook-Integration-Secret` | `handler.handle(body, headers)` |
-| Pathao (signature) | `X-PATHAO-Signature` (HMAC-SHA256) | `handler.handleWithSignature(body, headers)` |
-| RedX | `API-ACCESS-TOKEN` | `handler.handle(body, headers)` |
-| CarryBee | `X-Carrybee-Webhook-Signature` | `handler.handle(body, headers)` |
+| Provider           | Header                                         | Method                                       |
+| ------------------ | ---------------------------------------------- | -------------------------------------------- |
+| Steadfast          | `Authorization: Bearer <apiSecret>`            | `handler.handle(body, headers)`              |
+| Pathao (secret)    | `X-Pathao-Merchant-Webhook-Integration-Secret` | `handler.handle(body, headers)`              |
+| Pathao (signature) | `X-PATHAO-Signature` (HMAC-SHA256)             | `handler.handleWithSignature(body, headers)` |
+| RedX               | `API-ACCESS-TOKEN`                             | `handler.handle(body, headers)`              |
+| CarryBee           | `X-Carrybee-Webhook-Signature`                 | `handler.handle(body, headers)`              |
 
 ---
 
