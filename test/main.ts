@@ -15,6 +15,12 @@ const client = new RouteXpress({
     apiKey: "",
     environment: "development", // or "development"
   },
+  carrybee: {
+    clientId: "1a89c1a6-fc68-4395-9c09-628e0d3eaafc",
+    clientSecret: "1d7152c9-5b2d-4e4e-9c20-652b93333704",
+    clientContext: "DzJwPsx31WaTbS745XZoBjmQLcNqwK",
+    environment: "sandbox",
+  },
 });
 
 const orderData = {
@@ -555,4 +561,207 @@ const calculateRedX = async () => {
   }
 };
 
-createOrder();
+const carrybeeOrderData = {
+  store_id: "a1b2c3d4",
+  merchant_order_id: "order-1234",
+  delivery_type: 1,
+  product_type: 1,
+  recipient_phone: "01800000000",
+  recipient_name: "Karim",
+  recipient_address: "House 5, Road 3, Banani",
+  city_id: 1,
+  zone_id: 10,
+  item_weight: 500,
+  collectable_amount: 1500,
+};
+
+const createCarrybeeOrder = async () => {
+  try {
+    const response = await client.createOrder("carrybee", carrybeeOrderData);
+    console.log("CarryBee Order Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error creating CarryBee order:", err.message);
+    } else {
+      console.error("Unknown error occurred while creating CarryBee order");
+    }
+    process.exit(1);
+  }
+};
+
+const getCarrybeeCities = async () => {
+  try {
+    const response = await client.getCarrybeeCities();
+    console.log("CarryBee Cities Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error getting CarryBee cities:", err.message);
+    } else {
+      console.error("Unknown error occurred while getting CarryBee cities");
+    }
+    process.exit(1);
+  }
+};
+
+const getCarrybeeZones = async () => {
+  try {
+    const response = await client.getCarrybeeZones(1);
+    console.log("CarryBee Zones Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error getting CarryBee zones:", err.message);
+    } else {
+      console.error("Unknown error occurred while getting CarryBee zones");
+    }
+    process.exit(1);
+  }
+};
+
+const getCarrybeeAreas = async () => {
+  try {
+    const response = await client.getCarrybeeAreas(1, 10);
+    console.log("CarryBee Areas Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error getting CarryBee areas:", err.message);
+    } else {
+      console.error("Unknown error occurred while getting CarryBee areas");
+    }
+    process.exit(1);
+  }
+};
+
+const getCarrybeeStores = async () => {
+  try {
+    const response = await client.getCarrybeeStores();
+    console.log("CarryBee Stores Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error getting CarryBee stores:", err.message);
+    } else {
+      console.error("Unknown error occurred while getting CarryBee stores");
+    }
+    process.exit(1);
+  }
+};
+
+const getCarrybeeOrderDetails = async () => {
+  try {
+    const response = await client.getCarrybeeOrderDetails("FX1212124433");
+    console.log("CarryBee Order Details Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error getting CarryBee order details:", err.message);
+    } else {
+      console.error("Unknown error occurred while getting CarryBee order details");
+    }
+    process.exit(1);
+  }
+};
+
+const searchCarrybeeAreas = async () => {
+  try {
+    const response = await client.searchCarrybeeAreas("Gulshan");
+    console.log("CarryBee Area Search Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error searching CarryBee areas:", err.message);
+    } else {
+      console.error("Unknown error occurred while searching CarryBee areas");
+    }
+    process.exit(1);
+  }
+};
+
+const getCarrybeeAddressDetails = async () => {
+  try {
+    const response = await client.getCarrybeeAddressDetails("House 5, Road 3, Banani, Dhaka");
+    console.log("CarryBee Address Details Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error getting CarryBee address details:", err.message);
+    } else {
+      console.error("Unknown error occurred while getting CarryBee address details");
+    }
+    process.exit(1);
+  }
+};
+
+const createCarrybeeStore = async () => {
+  try {
+    const response = await client.createCarrybeeStore({
+      name: "My CarryBee Store",
+      contact_person_name: "John Doe",
+      contact_person_number: "01712345678",
+      address: "123 Main Street, Dhaka",
+      city_id: 1,
+      zone_id: 1,
+      area_id: 1,
+    });
+    console.log("CarryBee Store Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error creating CarryBee store:", err.message);
+    } else {
+      console.error("Unknown error occurred while creating CarryBee store");
+    }
+    process.exit(1);
+  }
+};
+
+const cancelCarrybeeOrder = async () => {
+  try {
+    const response = await client.cancelCarrybeeOrder("FX1212124433", "Customer requested cancellation");
+    console.log("CarryBee Cancel Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error cancelling CarryBee order:", err.message);
+    } else {
+      console.error("Unknown error occurred while cancelling CarryBee order");
+    }
+    process.exit(1);
+  }
+};
+
+const createCarrybeeReversePickup = async () => {
+  try {
+    const response = await client.createCarrybeeReversePickup({
+      store_id: "a1b2c3d4",
+      product_type: 1,
+      customer_phone: "01800000000",
+      customer_name: "Karim",
+      customer_address: "House 5, Road 3, Banani",
+      city_id: 1,
+      zone_id: 10,
+      item_weight: 500,
+    });
+    console.log("CarryBee Reverse Pickup Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error creating CarryBee reverse pickup:", err.message);
+    } else {
+      console.error("Unknown error occurred while creating CarryBee reverse pickup");
+    }
+    process.exit(1);
+  }
+};
+
+const createCarrybeeExchange = async () => {
+  try {
+    const response = await client.createCarrybeeExchange("FX1212124433", {
+      merchant_order_id: "order-1234",
+      item_quantity: 1,
+      item_weight: 500,
+    });
+    console.log("CarryBee Exchange Response:", response);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Error creating CarryBee exchange:", err.message);
+    } else {
+      console.error("Unknown error occurred while creating CarryBee exchange");
+    }
+    process.exit(1);
+  }
+};
+
+createCarrybeeOrder();

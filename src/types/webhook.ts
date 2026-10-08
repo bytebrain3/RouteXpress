@@ -508,6 +508,55 @@ export interface RedXWebhookPayload {
   delivery_type: RedXDeliveryType;
 }
 
+// ==================== CarryBee Webhook Types ====================
+
+export type CarrybeeWebhookEvent =
+  | "order.created"
+  | "order.create-failed"
+  | "order.updated"
+  | "order.pickup-requested"
+  | "order.assigned-for-pickup"
+  | "order.picked"
+  | "order.pickup-failed"
+  | "order.pickup-cancelled"
+  | "order.at-the-sorting-hub"
+  | "order.on-the-way-to-central-warehouse"
+  | "order.at-central-warehouse"
+  | "order.in-transit"
+  | "order.received-at-last-mile-hub"
+  | "order.assigned-for-delivery"
+  | "order.delivery-on-hold"
+  | "order.delivered"
+  | "order.partial-delivery"
+  | "order.delivery-failed"
+  | "order.returned"
+  | "order.paid-return"
+  | "order.exchange"
+  | "order.paid"
+  | "order.returned-at-sorting"
+  | "order.returned-in-transit"
+  | "order.returned-to-merchant";
+
+export interface CarrybeeWebhookPayload {
+  event: CarrybeeWebhookEvent;
+  store_id: string;
+  consignment_id: string;
+  merchant_order_id: string;
+  timestamptz: string;
+  collectable_amount?: number;
+  cod_fee?: number;
+  delivery_fee?: number;
+  position?: number;
+  reason?: string;
+  causes?: Record<string, Array<{ type: string }>>;
+  attempt?: number;
+  agent_name?: string;
+  agent_phone?: string;
+  collected_amount?: number;
+  remarks?: string;
+  invoice_id?: string;
+}
+
 // ==================== Common Webhook Types ====================
 
 /**

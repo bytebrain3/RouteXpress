@@ -10,22 +10,26 @@ import {
 } from "@/types/pathao.js";
 
 import { RedxCreateOrder } from "@/types/redx.js";
+import { CarrybeeCreateOrder } from "@/types/carrybee.js";
 
 import { Config } from "@/types/config.js";
 
 import { Steadfast } from "@/controllers/steadfast/index.js";
 import { Pathao } from "@/controllers/pathao/index.js";
 import { Redx } from "@/controllers/redx/index.js";
+import { Carrybee } from "@/controllers/carrybee/index.js";
 import {
   SteadfastWebhookHandler,
   PathaoWebhookHandler,
   RedXWebhookHandler,
+  CarrybeeWebhookHandler,
 } from "@/controllers/webhooks/index.js";
 
 export {
   SteadfastWebhookHandler,
   PathaoWebhookHandler,
   RedXWebhookHandler,
+  CarrybeeWebhookHandler,
 } from "@/controllers/webhooks/index.js";
 
 export type {
@@ -38,6 +42,8 @@ export type {
   RedXWebhookPayload,
   RedXWebhookStatus,
   RedXDeliveryType,
+  CarrybeeWebhookPayload,
+  CarrybeeWebhookEvent,
   WebhookVerifyResult,
   WebhookParseResult,
 } from "@/types/webhook.js";
@@ -47,18 +53,22 @@ export type {
   Steadfast_Config,
   Pathao_Config,
   Redx_Config,
+  Carrybee_Config,
   SteadfastWebhookConfig,
   PathaoWebhookConfig,
   RedXWebhookConfig,
+  CarrybeeWebhookConfig,
 } from "@/types/config.js";
 class RouteXpress {
   private config: Config;
   private pathao?: Pathao;
   private steadfast?: Steadfast;
   private redx?: Redx;
+  private carrybee?: Carrybee;
   private steadfastWebhook?: SteadfastWebhookHandler;
   private pathaoWebhook?: PathaoWebhookHandler;
   private redxWebhook?: RedXWebhookHandler;
+  private carrybeeWebhook?: CarrybeeWebhookHandler;
 
   constructor(config: Config) {
     if (!config) {
@@ -80,6 +90,10 @@ class RouteXpress {
       this.redx = new Redx(config.redx, config.redx.environment);
     }
 
+    if (config.carrybee) {
+      this.carrybee = new Carrybee(config.carrybee);
+    }
+
     // Initialize webhook handlers if configured
     if (config.webhooks?.steadfast?.enabled && config.webhooks.steadfast.apiSecret) {
       this.steadfastWebhook = new SteadfastWebhookHandler(
@@ -99,8 +113,14 @@ class RouteXpress {
       );
     }
 
+    if (config.webhooks?.carrybee?.enabled && config.webhooks.carrybee.webhookSecret) {
+      this.carrybeeWebhook = new CarrybeeWebhookHandler(
+        config.webhooks.carrybee.webhookSecret,
+      );
+    }
+
     // Ensure at least one service is configured
-    if (!this.steadfast && !this.pathao && !this.redx) {
+    if (!this.steadfast && !this.pathao && !this.redx && !this.carrybee) {
       throw new Error(
         "At least one delivery service provider must be configured",
       );
@@ -141,6 +161,18 @@ class RouteXpress {
       throw new Error("Redx service is not configured");
     }
     return this.redx;
+  }
+
+  /**
+   * Safely access the Carrybee service.
+   * @returns {Carrybee} The Carrybee service instance.
+   * @throws {Error} If the Carrybee service is not configured.
+   */
+  protected getCarrybee(): Carrybee {
+    if (!this.carrybee) {
+      throw new Error("Carrybee service is not configured");
+    }
+    return this.carrybee;
   }
 
   /**
@@ -210,6 +242,28 @@ class RouteXpress {
   }
 
   /**
+   * Safely access the Carrybee webhook handler.
+   *
+   * @returns The Carrybee webhook handler.
+   * @throws If Carrybee webhooks are not configured.
+   *
+   * @example
+   * ```ts
+   * const handler = rx.getCarrybeeWebhook();
+   * const result = handler.handle(requestBody, requestHeaders);
+   * if (result.success) {
+   *   console.log(result.data);
+   * }
+   * ```
+   */
+  getCarrybeeWebhook(): CarrybeeWebhookHandler {
+    if (!this.carrybeeWebhook) {
+      throw new Error("Carrybee webhook is not configured");
+    }
+    return this.carrybeeWebhook;
+  }
+
+  /**
    * Get the configured webhook URL for a provider.
    *
    * @param provider - The delivery service provider.
@@ -224,7 +278,7 @@ class RouteXpress {
    * // Register this URL with the courier's dashboard or API
    * ```
    */
-  getWebhookUrl(provider: "steadfast" | "pathao" | "redx"): string {
+  getWebhookUrl(provider: "steadfast" | "pathao" | "redx" | "carrybee"): string {
     const url = this.config.webhooks?.[provider]?.webhookUrl;
     if (!url) {
       throw new Error(`Webhook URL is not configured for ${provider}`);
@@ -256,8 +310,8 @@ class RouteXpress {
    * ```
    */
   async createOrder(
-    provider: "steadfast" | "pathao" | "redx",
-    orderData: Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder,
+    provider: "steadfast" | "pathao" | "redx" | "carrybee",
+    orderData: Order_Data_For_Steadfast | CreatePathaoOrder | RedxCreateOrder | CarrybeeCreateOrder,
   ) {
     try {
       if (!orderData || !provider) {
@@ -290,6 +344,14 @@ class RouteXpress {
           throw new Error("Order data is required for Redx orders");
         }
         return await this.getRedx().createOrder(redxOrder);
+      }
+
+      if (normalizedProvider === "carrybee") {
+        const carrybeeOrder = orderData as CarrybeeCreateOrder;
+        if (!carrybeeOrder) {
+          throw new Error("Order data is required for Carrybee orders");
+        }
+        return await this.getCarrybee().createOrder(carrybeeOrder);
       }
 
       throw new Error(`Unsupported provider: ${provider}`);
@@ -1123,7 +1185,178 @@ class RouteXpress {
       throw new Error("An unknown error occurred while calculating the price");
     }
   }
+
+  async createCarrybeeStore(storeData: {
+    name: string;
+    contact_person_name: string;
+    contact_person_number: string;
+    contact_person_secondary_number?: string;
+    address: string;
+    city_id: number;
+    zone_id: number;
+    area_id: number;
+    lat?: number;
+    lng?: number;
+  }) {
+    try {
+      return await this.getCarrybee().createStore(storeData);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getCarrybeeStores() {
+    try {
+      return await this.getCarrybee().getStores();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getCarrybeeCities() {
+    try {
+      return await this.getCarrybee().getCities();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getCarrybeeZones(cityId: number) {
+    try {
+      return await this.getCarrybee().getZones(cityId);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getCarrybeeAreas(cityId: number, zoneId: number) {
+    try {
+      return await this.getCarrybee().getAreas(cityId, zoneId);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async searchCarrybeeAreas(search: string) {
+    try {
+      return await this.getCarrybee().searchAreas(search);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getCarrybeeAddressDetails(query: string) {
+    try {
+      return await this.getCarrybee().getAddressDetails(query);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async cancelCarrybeeOrder(consignmentId: string, cancellationReason: string) {
+    try {
+      return await this.getCarrybee().cancelOrder(consignmentId, cancellationReason);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async getCarrybeeOrderDetails(consignmentId: string) {
+    try {
+      return await this.getCarrybee().getOrderDetails(consignmentId);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async createCarrybeeReversePickup(pickupData: {
+    store_id: string;
+    merchant_order_id?: string;
+    product_type: number;
+    customer_phone: string;
+    customer_secondary_phone?: string;
+    customer_name: string;
+    customer_address: string;
+    city_id: number;
+    zone_id: number;
+    area_id?: number;
+    item_weight: number;
+    item_quantity?: number;
+    product_value?: number;
+    product_description?: string;
+    special_instruction?: string;
+  }) {
+    try {
+      return await this.getCarrybee().createReversePickup(pickupData);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
+
+  async createCarrybeeExchange(
+    consignmentId: string,
+    exchangeData?: {
+      merchant_order_id?: string;
+      collectable_amount?: number;
+      item_quantity?: number;
+      item_weight?: number;
+      product_description?: string;
+      special_instruction?: string;
+    },
+  ) {
+    try {
+      return await this.getCarrybee().createExchange(consignmentId, exchangeData);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unknown error occurred");
+    }
+  }
 }
 
 export default RouteXpress;
 export { RouteXpress };
+
+export {
+  validateSteadfastOrder,
+  validateSteadfastBulkOrder,
+} from "@/validators/steadfast.js";
+export {
+  validatePathaoStore,
+  validatePathaoOrder,
+  validatePathaoBulkOrder,
+} from "@/validators/pathao.js";
+export { validateRedxOrder } from "@/validators/redx.js";
+export { validateCarrybeeOrder } from "@/validators/carrybee.js";
+export type { ErrorResponse } from "@/utils/errors.js";

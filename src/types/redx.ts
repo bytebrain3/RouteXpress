@@ -15,13 +15,6 @@ interface RedxCreateOrder {
   is_closed_box ?: boolean; // Indicates if the parcel is in a closed box (optional).
 }
 
-interface ErrorResponse {
-  status: number;
-  message: string;
-  code?: number;
-  error?: string;
-}
-
 interface RedxResponse {
   tracking_id: string;
 }
@@ -82,8 +75,7 @@ interface RedxAreaResponse {
 }
 
 export { 
-  RedxCreateOrder, 
-  ErrorResponse, 
+  RedxCreateOrder,  
   RedxResponse, 
   RedxUpdateOrder, 
   RedxStoreResponse, 
@@ -91,3 +83,5 @@ export {
   RedxTrackByid,
   RedxAreaResponse,
 };
+
+export type { ErrorResponse } from "@/utils/errors.js";

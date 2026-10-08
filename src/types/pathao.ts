@@ -5,13 +5,6 @@ interface TokenIssueResponse {
   refresh_token: string;
 }
 
-interface ErrorResponse {
-  status: number;
-  message: string;
-  code?: number;
-  error?: string;
-}
-
 interface PathaoStore {
   name: string;
   contact_name: string;
@@ -185,7 +178,6 @@ interface PathaoAllStoreResponse {
 
 export {
   TokenIssueResponse,
-  ErrorResponse,
   PathaoStore,
   PathaoStoreResponse,
   PathaoAllStoreResponse,
@@ -199,3 +191,5 @@ export {
   PathaoPriceResponse,
   PathaoOrderPiceData,
 };
+
+export type { ErrorResponse } from "@/utils/errors.js";

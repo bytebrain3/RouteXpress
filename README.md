@@ -9,21 +9,22 @@
 ![npm downloads weekly](https://img.shields.io/npm/dw/routexpress-bd)
 ![npm downloads monthly](https://img.shields.io/npm/dm/routexpress-bd)
 
-A Node.js library to unify and manage courier services in Bangladesh (Steadfast, Pathao, REDX).
+A Node.js library to unify and manage courier services in Bangladesh (Steadfast, Pathao, REDX, CarryBee).
 
 ---
 
 ## Features
 
-- Unified API for multiple courier providers (Steadfast, Pathao, REDX)
+- Unified API for multiple courier providers (Steadfast, Pathao, REDX, CarryBee)
 - Create single or bulk orders
 - Fetch order status by consignment ID, invoice, or tracking code
 - Manage Pathao tokens, stores, and locations
 - Steadfast return requests, payments, and police stations
 - REDX store management, parcel tracking, and price calculation
+- CarryBee store management, reverse pickup, exchanges, and address resolution
 - Get Steadfast account balance
 - Price calculation for Pathao and REDX orders
-- **Webhook support** for all three providers with built-in verification
+- **Webhook support** for all four providers with built-in verification
 
 ---
 
@@ -65,6 +66,12 @@ const client = new RouteXpress({
     apiKey: "YOUR_REDX_API_KEY",
     environment: "production", // or "development"
   },
+  carrybee: {
+    clientId: "YOUR_CARRYBEE_CLIENT_ID",
+    clientSecret: "YOUR_CARRYBEE_CLIENT_SECRET",
+    clientContext: "YOUR_CARRYBEE_CLIENT_CONTEXT",
+    environment: "sandbox", // or "production"
+  },
 });
 ```
 
@@ -96,6 +103,11 @@ const client = new RouteXpress({
       webhookUrl: "https://your-server.com/api/webhooks/redx",
       apiAccessToken: "YOUR_REDX_API_ACCESS_TOKEN",
     },
+    carrybee: {
+      enabled: true,
+      webhookUrl: "https://your-server.com/api/webhooks/carrybee",
+      webhookSecret: "YOUR_CARRYBEE_WEBHOOK_SECRET",
+    },
   },
 });
 ```
@@ -105,6 +117,7 @@ const client = new RouteXpress({
 | Steadfast | `Authorization: Bearer <apiSecret>` header | `apiSecret` |
 | Pathao | `X-Pathao-Merchant-Webhook-Integration-Secret` header + optional HMAC-SHA256 `X-PATHAO-Signature` | `integrationSecret` |
 | RedX | `API-ACCESS-TOKEN` header | `apiAccessToken` |
+| CarryBee | `X-Carrybee-Webhook-Signature` header | `webhookSecret` |
 
 ---
 
@@ -497,6 +510,130 @@ console.log("Response:", response);
 
 ---
 
+### CarryBee
+
+#### 1. Create Order
+
+```typescript
+const response = await client.createOrder("carrybee", {
+  store_id: "9922",
+  merchant_order_id: "order-1234",
+  delivery_type: 1, // 1 = Normal, 2 = Express
+  product_type: 1, // 1 = Parcel, 2 = Book, 3 = Document
+  recipient_phone: "01712345678",
+  recipient_name: "John Doe",
+  recipient_address: "House 10, Road 5, Dhanmondi, Dhaka",
+  city_id: 14,
+  zone_id: 50,
+  area_id: 1676,
+  item_weight: 500,
+  item_quantity: 1,
+  collectable_amount: 1500,
+});
+console.log("CarryBee Order Response:", response);
+```
+
+#### 2. Get Order Details
+
+```typescript
+const response = await client.getCarrybeeOrderDetails("F1008BB2A9R");
+console.log("Response:", response);
+```
+
+#### 3. Cancel Order
+
+```typescript
+const response = await client.cancelCarrybeeOrder("F1008BB2A9R", "Customer requested cancellation");
+console.log("Response:", response);
+```
+
+#### 4. Create Store
+
+```typescript
+const response = await client.createCarrybeeStore({
+  name: "My Store",
+  contact_person_name: "John Doe",
+  contact_person_number: "01712345678",
+  address: "123 Main Street, Dhaka",
+  city_id: 14,
+  zone_id: 50,
+  area_id: 1676,
+});
+console.log("Response:", response);
+```
+
+#### 5. Get All Stores
+
+```typescript
+const response = await client.getCarrybeeStores();
+console.log("Response:", response);
+```
+
+#### 6. Get Cities
+
+```typescript
+const response = await client.getCarrybeeCities();
+console.log("Response:", response);
+```
+
+#### 7. Get Zones
+
+```typescript
+const response = await client.getCarrybeeZones(14); // 14 = Dhaka
+console.log("Response:", response);
+```
+
+#### 8. Get Areas
+
+```typescript
+const response = await client.getCarrybeeAreas(14, 151); // city 14, zone 151
+console.log("Response:", response);
+```
+
+#### 9. Search Areas
+
+```typescript
+const response = await client.searchCarrybeeAreas("Gulshan");
+console.log("Response:", response);
+```
+
+#### 10. Get Address Details
+
+```typescript
+const response = await client.getCarrybeeAddressDetails("House 5, Road 3, Banani, Dhaka");
+console.log("Response:", response);
+```
+
+#### 11. Create Reverse Pickup
+
+```typescript
+const response = await client.createCarrybeeReversePickup({
+  store_id: "9922",
+  product_type: 1,
+  customer_phone: "01712345678",
+  customer_name: "John Doe",
+  customer_address: "House 10, Road 5, Dhanmondi, Dhaka",
+  city_id: 14,
+  zone_id: 50,
+  area_id: 1676,
+  item_weight: 500,
+});
+console.log("Response:", response);
+```
+
+#### 12. Create Exchange
+
+```typescript
+const response = await client.createCarrybeeExchange("F1008BB2A9R", {
+  merchant_order_id: "exchange-001",
+  item_quantity: 1,
+  item_weight: 500,
+});
+console.log("Response:", response);
+```
+
+---
+
 ## Webhooks
 
 RouteXpress provides built-in webhook handlers for each provider. Use them in your route handlers to verify and parse incoming webhooks.
@@ -588,6 +725,30 @@ app.post("/api/webhooks/redx", (req, res) => {
 });
 ```
 
+### CarryBee Webhooks
+
+```typescript
+// Express example
+app.post("/api/webhooks/carrybee", (req, res) => {
+  const handler = client.getCarrybeeWebhook();
+
+  // Verify via X-Carrybee-Webhook-Signature header
+  const result = handler.handle(req.body, req.headers);
+
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  const webhook = result.data;
+
+  console.log(`CarryBee event: ${webhook.event}`);
+  console.log(`Consignment: ${webhook.consignment_id}`);
+  console.log(`Merchant Order: ${webhook.merchant_order_id}`);
+
+  res.json({ received: true });
+});
+```
+
 ### Getting the Webhook URL
 
 Use `getWebhookUrl()` to retrieve the URL you registered with each provider:
@@ -601,6 +762,9 @@ const pathaoUrl = client.getWebhookUrl("pathao");
 
 const redxUrl = client.getWebhookUrl("redx");
 //=> "https://your-server.com/api/webhooks/redx"
+
+const carrybeeUrl = client.getWebhookUrl("carrybee");
+//=> "https://your-server.com/api/webhooks/carrybee"
 ```
 
 ### Webhook Verification Summary
@@ -611,6 +775,7 @@ const redxUrl = client.getWebhookUrl("redx");
 | Pathao (secret) | `X-Pathao-Merchant-Webhook-Integration-Secret` | `handler.handle(body, headers)` |
 | Pathao (signature) | `X-PATHAO-Signature` (HMAC-SHA256) | `handler.handleWithSignature(body, headers)` |
 | RedX | `API-ACCESS-TOKEN` | `handler.handle(body, headers)` |
+| CarryBee | `X-Carrybee-Webhook-Signature` | `handler.handle(body, headers)` |
 
 ---
 
@@ -628,6 +793,7 @@ import {
   SteadfastWebhookHandler,
   PathaoWebhookHandler,
   RedXWebhookHandler,
+  CarrybeeWebhookHandler,
 } from "routexpress-bd";
 
 // Webhook types
@@ -644,6 +810,9 @@ import type {
   RedXWebhookPayload,
   RedXWebhookStatus,
   RedXDeliveryType,
+  // CarryBee
+  CarrybeeWebhookPayload,
+  CarrybeeWebhookEvent,
   // Common
   WebhookVerifyResult,
   WebhookParseResult,
@@ -655,9 +824,11 @@ import type {
   Steadfast_Config,
   Pathao_Config,
   Redx_Config,
+  Carrybee_Config,
   SteadfastWebhookConfig,
   PathaoWebhookConfig,
   RedXWebhookConfig,
+  CarrybeeWebhookConfig,
 } from "routexpress-bd";
 ```
 

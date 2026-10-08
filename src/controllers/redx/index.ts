@@ -9,6 +9,14 @@ import {
   RedxTrackByid,
   RedxAreaResponse,
 } from "@/types/redx.js";
+import {
+  ErrorResponse as ApiErrorResponse,
+  RequestResult,
+  validationError,
+  apiError,
+  unknownError,
+} from "@/utils/errors.js";
+import { validateRedxOrder } from "@/validators/redx.js";
 
 class Redx {
   private config: Redx_Config;
@@ -20,6 +28,45 @@ class Redx {
       environment === "production"
         ? "openapi.redx.com.bd/v1.0.0-beta"
         : "sandbox.redx.com.bd/v1.0.0-beta";
+  }
+
+  private async request<T>(
+    path: string,
+    init?: RequestInit,
+  ): Promise<RequestResult<T>> {
+    try {
+      const response = await fetch(`https://${this.baseUrl}${path}`, init);
+      const raw = await response.text();
+
+      if (!response.ok) {
+        return { ok: false, error: await apiError(response, raw) };
+      }
+
+      if (!raw) {
+        return { ok: true, data: {} as T };
+      }
+
+      try {
+        return { ok: true, data: JSON.parse(raw) as T };
+      } catch {
+        return {
+          ok: false,
+          error: {
+            status: response.status,
+            message: "Invalid JSON response from RedX",
+          },
+        };
+      }
+    } catch (error) {
+      return { ok: false, error: unknownError(error) };
+    }
+  }
+
+  private headers(): Record<string, string> {
+    return {
+      "Content-Type": "application/json",
+      "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
+    };
   }
 
   /**
@@ -46,33 +93,17 @@ class Redx {
   async createOrder(
     orderData: RedxCreateOrder
   ): Promise<RedxResponse | ErrorResponse> {
-    try {
-      console.log("Request Payload:", orderData);
-
-      const response = await fetch(`https://${this.baseUrl}/parcel`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      console.log("Parsed Response Data:", data);
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
+    const validation = validateRedxOrder(orderData);
+    if (validation) {
+      return validationError(validation);
     }
+
+    const result = await this.request<RedxResponse>("/parcel", {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify(orderData),
+    });
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -98,30 +129,28 @@ class Redx {
     phone: string;
     area_id: string;
   }): Promise<RedxStoreResponse | ErrorResponse> {
-    try {
-      const response = await fetch(`https://${this.baseUrl}/pickup/store`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-        },
-        body: JSON.stringify(storeData),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
+    if (!storeData) {
+      return validationError("Store data is required");
     }
+    if (!storeData.name) {
+      return validationError("Store name is required");
+    }
+    if (!storeData.address) {
+      return validationError("Store address is required");
+    }
+    if (!storeData.phone) {
+      return validationError("Store phone is required");
+    }
+    if (!storeData.area_id) {
+      return validationError("Store area ID is required");
+    }
+
+    const result = await this.request<RedxStoreResponse>("/pickup/store", {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify(storeData),
+    });
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -139,32 +168,18 @@ class Redx {
   async trackParcelByTrackingCode(
     trackingCode: string
   ): Promise<RedxTrackByidResponse | ErrorResponse> {
-    try {
-      const response = await fetch(
-        `https://${this.baseUrl}/parcel/track/${trackingCode}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
+    if (!trackingCode) {
+      return validationError("Tracking code is required");
     }
+
+    const result = await this.request<RedxTrackByidResponse>(
+      `/parcel/track/${trackingCode}`,
+      {
+        method: "GET",
+        headers: this.headers(),
+      },
+    );
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -182,33 +197,18 @@ class Redx {
   async getParcelInfoByTrackingCode(
     trackingCode: string
   ): Promise<RedxTrackByid | ErrorResponse> {
-    try {
-      const response = await fetch(
-        `https://${this.baseUrl}/parcel/info/${trackingCode}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
+    if (!trackingCode) {
+      return validationError("Tracking code is required");
     }
+
+    const result = await this.request<RedxTrackByid>(
+      `/parcel/info/${trackingCode}`,
+      {
+        method: "GET",
+        headers: this.headers(),
+      },
+    );
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -232,36 +232,23 @@ class Redx {
     trackingCode: string,
     updateData: object
   ): Promise<RedxUpdateOrder | ErrorResponse> {
-    try {
-      console.log("Update Data:", updateData);
-      const response = await fetch(`https://${this.baseUrl}/parcels`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-        },
-        body: JSON.stringify({
-          entity_type: "parcel-tracking-id",
-          entity_id: trackingCode,
-          update_details: updateData,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
+    if (!trackingCode) {
+      return validationError("Tracking code is required");
     }
+    if (!updateData || typeof updateData !== "object") {
+      return validationError("Update data is required");
+    }
+
+    const result = await this.request<RedxUpdateOrder>("/parcels", {
+      method: "PATCH",
+      headers: this.headers(),
+      body: JSON.stringify({
+        entity_type: "parcel-tracking-id",
+        entity_id: trackingCode,
+        update_details: updateData,
+      }),
+    });
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -276,29 +263,11 @@ class Redx {
    * ```
    */
   async getAreaList(): Promise<RedxAreaResponse[] | ErrorResponse> {
-    try {
-      const response = await fetch(`https://${this.baseUrl}/areas`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
-    }
+    const result = await this.request<RedxAreaResponse[]>("/areas", {
+      method: "GET",
+      headers: this.headers(),
+    });
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -316,32 +285,18 @@ class Redx {
   async getAreaByPostcode(
     postcode: string
   ): Promise<RedxAreaResponse | ErrorResponse> {
-    try {
-      const response = await fetch(
-        `https://${this.baseUrl}//areas?post_code=${postcode}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
+    if (!postcode) {
+      return validationError("Postcode is required");
     }
+
+    const result = await this.request<RedxAreaResponse>(
+      `/areas?post_code=${postcode}`,
+      {
+        method: "GET",
+        headers: this.headers(),
+      },
+    );
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -359,32 +314,18 @@ class Redx {
   async getAreaByDistrictName(
     districtName: string
   ): Promise<RedxAreaResponse | ErrorResponse> {
-    try {
-      const response = await fetch(
-        `https://${this.baseUrl}/areas?district_name=${districtName}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
+    if (!districtName) {
+      return validationError("District name is required");
     }
+
+    const result = await this.request<RedxAreaResponse>(
+      `/areas?district_name=${districtName}`,
+      {
+        method: "GET",
+        headers: this.headers(),
+      },
+    );
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -399,29 +340,11 @@ class Redx {
    * ```
    */
   async getStores(): Promise<RedxStoreResponse[] | ErrorResponse> {
-    try {
-      const response = await fetch(`https://${this.baseUrl}/pickup/stores`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
-    }
+    const result = await this.request<RedxStoreResponse[]>("/pickup/stores", {
+      method: "GET",
+      headers: this.headers(),
+    });
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -439,32 +362,18 @@ class Redx {
   async getPickupStoreInfo(
     storeId: string
   ): Promise<RedxStoreResponse | ErrorResponse> {
-    try {
-      const response = await fetch(
-        `https://${this.baseUrl}/pickup/store/info/${storeId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
+    if (!storeId) {
+      return validationError("Store ID is required");
     }
+
+    const result = await this.request<RedxStoreResponse>(
+      `/pickup/store/info/${storeId}`,
+      {
+        method: "GET",
+        headers: this.headers(),
+      },
+    );
+    return result.ok ? result.data : result.error;
   }
 
   /**
@@ -494,34 +403,18 @@ class Redx {
         }
       | object
   ) {
+    const queryParams = new URLSearchParams(
+      orderData as Record<string, string>,
+    ).toString();
 
-    try {
-      console.log("Request Payload:", orderData);
-      const queryParams = new URLSearchParams(orderData as Record<string, string>).toString();
-      const response = await fetch(
-        `https://${this.baseUrl}/charge/charge_calculator?${queryParams}`,
-        {
-          method: "GET",
-          headers: {
-        "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Error Response Body:", errorBody);
-        throw new Error(errorBody);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: unknown) {
-      return {
-        status: 500,
-        message: (error as Error)?.message || "An unexpected error occurred",
-      } as ErrorResponse;
-    }
+    const result = await this.request<Record<string, unknown>>(
+      `/charge/charge_calculator?${queryParams}`,
+      {
+        method: "GET",
+        headers: { "API-ACCESS-TOKEN": `Bearer ${this.config.apiKey}` },
+      },
+    );
+    return result.ok ? result.data : result.error;
   }
 }
 

@@ -85,11 +85,6 @@ interface Bulk_Order_Response_For_Steadfast {
   data: Bulk_Order_Response_Items_For_Steadfast[];
 }
 
-interface ErrorResponse {
-  status: number;
-  message: string;
-}
-
 interface Delivery_Status_Response {
   status: number;
   delivery_status: string;
@@ -150,7 +145,6 @@ export {
   Order_Data_For_Steadfast,
   Bulk_Order_Response_For_Steadfast,
   Bulk_Order_Response_Items_For_Steadfast,
-  ErrorResponse,
   Create_Order_Response_Items_For_Steadfast,
   Delivery_Status_Response,
   Balance_Response,
@@ -160,3 +154,5 @@ export {
   Payment_Consignment,
   Police_Station,
 };
+
+export type { ErrorResponse } from "@/utils/errors.js";
