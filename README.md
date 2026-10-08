@@ -11,6 +11,8 @@
 
 A Node.js library to unify and manage courier services in Bangladesh (Steadfast, Pathao, REDX, CarryBee).
 
+> **v1.1.0** — Added CarryBee provider with full API support, webhooks, reverse pickup, exchanges, and address resolution.
+
 ---
 
 ## Features
