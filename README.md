@@ -1,6 +1,6 @@
 # RouteXpress-BD
 
-![RouteXpress Hero](/public/route.png)
+![RouteXpress Hero](./public/route.png)
 
 ## NPM Stats & Info
 
@@ -9,24 +9,26 @@
 ![npm downloads weekly](https://img.shields.io/npm/dw/routexpress-bd)
 ![npm downloads monthly](https://img.shields.io/npm/dm/routexpress-bd)
 
-A Node.js library to unify and manage courier services in Bangladesh (Steadfast, Pathao, REDX, CarryBee).
+A Node.js library to unify and manage courier services in Bangladesh (Steadfast, Pathao, REDX, CarryBee, PaperFly, EcoCourier).
 
-> **v1.1.1** — Added CarryBee provider with full API support, webhooks, reverse pickup, exchanges, and address resolution.
+> **v1.2.0** — Adds the **PaperFly** and **EcoCourier** providers for a total of six unified couriers. See the [CHANGELOG](./CHANGELOG.md) for details.
 
 ---
 
 ## Features
 
-- Unified API for multiple courier providers (Steadfast, Pathao, REDX, CarryBee)
+- Unified API for multiple courier providers (Steadfast, Pathao, REDX, CarryBee, PaperFly, EcoCourier)
 - Create single or bulk orders
 - Fetch order status by consignment ID, invoice, or tracking code
 - Manage Pathao tokens, stores, and locations
 - Steadfast return requests, payments, and police stations
 - REDX store management, parcel tracking, and price calculation
 - CarryBee store management, reverse pickup, exchanges, and address resolution
+- PaperFly order creation, tracking, and cancellation
+- EcoCourier order creation, tracking, cancellation, package listing, payment status, fraud check, and location/branch data
 - Get Steadfast account balance
 - Price calculation for Pathao and REDX orders
-- **Webhook support** for all four providers with built-in verification
+- **Webhook support** for Steadfast, Pathao, REDX, CarryBee, and PaperFly with built-in verification
 
 ---
 
@@ -74,10 +76,21 @@ const client = new RouteXpress({
     clientContext: "YOUR_CARRYBEE_CLIENT_CONTEXT",
     environment: "sandbox", // or "production"
   },
+  paperfly: {
+    username: "YOUR_PAPERFLY_USERNAME",
+    password: "YOUR_PAPERFLY_PASSWORD",
+    apiKey: "YOUR_PAPERFLY_API_KEY",
+  },
+  ecourier: {
+    apiKey: "YOUR_ECOURIER_API_KEY",
+    apiSecret: "YOUR_ECOURIER_API_SECRET",
+    userId: "YOUR_ECOURIER_USER_ID",
+    environment: "sandbox", // or "production"
+  },
 });
 ```
 
-> You can configure one, two, or all three providers. At least one must be configured.
+> You can configure one or more providers. At least one must be configured.
 
 ### Webhook Configuration (Optional)
 
@@ -110,6 +123,11 @@ const client = new RouteXpress({
       webhookUrl: "https://your-server.com/api/webhooks/carrybee",
       webhookSecret: "YOUR_CARRYBEE_WEBHOOK_SECRET",
     },
+    paperfly: {
+      enabled: true,
+      webhookUrl: "https://your-server.com/api/webhooks/paperfly",
+      webhookSecret: "YOUR_PAPERFLY_WEBHOOK_SECRET",
+    },
   },
 });
 ```
@@ -120,6 +138,9 @@ const client = new RouteXpress({
 | Pathao    | `X-Pathao-Merchant-Webhook-Integration-Secret` header + optional HMAC-SHA256 `X-PATHAO-Signature` | `integrationSecret` |
 | RedX      | `API-ACCESS-TOKEN` header                                                                         | `apiAccessToken`    |
 | CarryBee  | `X-Carrybee-Webhook-Signature` header                                                             | `webhookSecret`     |
+| PaperFly  | `X-Paperfly-Webhook-Secret` header                                                                | `webhookSecret`     |
+
+> EcoCourier does not currently expose a webhook handler.
 
 ---
 
@@ -641,6 +662,149 @@ console.log("Response:", response);
 
 ---
 
+### PaperFly
+
+#### 1. Create Order
+
+```typescript
+const response = await client.createPaperflyOrder({
+  merchantOrderReference: "order-1234",
+  storeName: "My Store",
+  productBrief: "Electronics",
+  packagePrice: "1500",
+  max_weight: "1",
+  customerName: "John Doe",
+  customerAddress: "House 10, Road 5, Dhanmondi, Dhaka",
+  customerPhone: "01712345678",
+  orderType: "regular", // optional
+});
+console.log("PaperFly Order Response:", response);
+```
+
+#### 2. Track Order
+
+```typescript
+const response = await client.trackPaperflyOrder("order-1234");
+console.log("Response:", response);
+```
+
+#### 3. Cancel Order
+
+```typescript
+const response = await client.cancelPaperflyOrder("order-1234");
+console.log("Response:", response);
+```
+
+---
+
+### EcoCourier
+
+#### 1. Create Order
+
+```typescript
+const response = await client.createEcourierOrder({
+  recipient_name: "John Doe",
+  recipient_mobile: "01712345678",
+  recipient_city: "Dhaka",
+  recipient_thana: "Dhanmondi",
+  recipient_area: "Dhanmondi 15",
+  recipient_address: "House 10, Road 5, Dhanmondi, Dhaka",
+  package_code: "PACK-001",
+  product_price: 1500,
+  payment_method: "COD",
+  recipient_zip: "1209",
+  number_of_item: 1,
+  comments: "Handle with care",
+});
+console.log("EcoCourier Order Response:", response);
+```
+
+#### 2. Track Order
+
+```typescript
+// Track by product ID and/or EcoCourier reference (ecr)
+const response = await client.trackEcourierOrder("PACK-001", "ECR123456");
+console.log("Response:", response);
+```
+
+#### 3. Cancel Order
+
+```typescript
+const response = await client.cancelEcourierOrder(
+  "ECR123456",
+  "Customer requested cancellation",
+);
+console.log("Response:", response);
+```
+
+#### 4. List Packages
+
+```typescript
+const response = await client.getEcourierPackages();
+console.log("Response:", response);
+```
+
+#### 5. Fraud Check
+
+```typescript
+const response = await client.ecourierFraudCheck("01712345678");
+console.log("Response:", response);
+```
+
+#### 6. Get Cities
+
+```typescript
+const response = await client.getEcourierCities();
+console.log("Response:", response);
+```
+
+#### 7. Get Thanas
+
+```typescript
+const response = await client.getEcourierThanas("Dhaka");
+console.log("Response:", response);
+```
+
+#### 8. Get Areas by Postcode
+
+```typescript
+const response = await client.getEcourierAreas("1209");
+console.log("Response:", response);
+```
+
+#### 9. Get Branches
+
+```typescript
+const response = await client.getEcourierBranches();
+console.log("Response:", response);
+```
+
+#### 10. Get Payment Status
+
+```typescript
+const response = await client.getEcourierPaymentStatus("ECR123456");
+console.log("Response:", response);
+```
+
+#### 11. Track Child Parcel
+
+```typescript
+const response = await client.trackEcourierChild("PACK-001", "ECR123456");
+console.log("Response:", response);
+```
+
+#### 12. Cancel Child Order
+
+```typescript
+const response = await client.cancelEcourierChildOrder(
+  "ECR123456",
+  "Customer requested cancellation",
+);
+console.log("Response:", response);
+```
+
+---
+
 ## Webhooks
 
 RouteXpress provides built-in webhook handlers for each provider. Use them in your route handlers to verify and parse incoming webhooks.
@@ -756,6 +920,30 @@ app.post("/api/webhooks/carrybee", (req, res) => {
 });
 ```
 
+### PaperFly Webhooks
+
+```typescript
+// Express example
+app.post("/api/webhooks/paperfly", (req, res) => {
+  const handler = client.getPaperflyWebhook();
+
+  // Verify via X-Paperfly-Webhook-Secret header
+  const result = handler.handle(req.body, req.headers);
+
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  const webhook = result.data;
+
+  console.log(`PaperFly event: ${webhook.event}`);
+  console.log(`Merchant Order: ${webhook.merchant_order_reference}`);
+  console.log(`Tracking: ${webhook.tracking_number}`);
+
+  res.json({ received: true });
+});
+```
+
 ### Getting the Webhook URL
 
 Use `getWebhookUrl()` to retrieve the URL you registered with each provider:
@@ -772,6 +960,9 @@ const redxUrl = client.getWebhookUrl("redx");
 
 const carrybeeUrl = client.getWebhookUrl("carrybee");
 //=> "https://your-server.com/api/webhooks/carrybee"
+
+const paperflyUrl = client.getWebhookUrl("paperfly");
+//=> "https://your-server.com/api/webhooks/paperfly"
 ```
 
 ### Webhook Verification Summary
@@ -783,6 +974,7 @@ const carrybeeUrl = client.getWebhookUrl("carrybee");
 | Pathao (signature) | `X-PATHAO-Signature` (HMAC-SHA256)             | `handler.handleWithSignature(body, headers)` |
 | RedX               | `API-ACCESS-TOKEN`                             | `handler.handle(body, headers)`              |
 | CarryBee           | `X-Carrybee-Webhook-Signature`                 | `handler.handle(body, headers)`              |
+| PaperFly           | `X-Paperfly-Webhook-Secret`                    | `handler.handle(body, headers)`              |
 
 ---
 
@@ -801,6 +993,7 @@ import {
   PathaoWebhookHandler,
   RedXWebhookHandler,
   CarrybeeWebhookHandler,
+  PaperflyWebhookHandler,
 } from "routexpress-bd";
 
 // Webhook types
@@ -820,6 +1013,9 @@ import type {
   // CarryBee
   CarrybeeWebhookPayload,
   CarrybeeWebhookEvent,
+  // PaperFly
+  PaperflyWebhookPayload,
+  PaperflyWebhookEvent,
   // Common
   WebhookVerifyResult,
   WebhookParseResult,
@@ -832,10 +1028,13 @@ import type {
   Pathao_Config,
   Redx_Config,
   Carrybee_Config,
+  Paperfly_Config,
+  Ecourier_Config,
   SteadfastWebhookConfig,
   PathaoWebhookConfig,
   RedXWebhookConfig,
   CarrybeeWebhookConfig,
+  PaperflyWebhookConfig,
 } from "routexpress-bd";
 ```
 
@@ -869,4 +1068,4 @@ MIT
 
 ---
 
-For more details, see the [test/main.ts](./test/main.ts) file for real usage examples.
+For more details, see the [CHANGELOG](./CHANGELOG.md).
