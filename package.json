@@ -1,6 +1,6 @@
 {
   "name": "routexpress-bd",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "A TypeScript/JavaScript library for integrating Steadfast, Pathao, REDX, and CarryBee delivery services in Bangladesh",
   "type": "module",
   "main": "dist/index.js",
@@ -109,7 +109,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bytebrain3/RouteXpress.git"
+    "url": "git+https://github.com/bytebrain3/RouteXpress.git"
   },
   "packageManager": "pnpm@10.7.1",
   "devDependencies": {
